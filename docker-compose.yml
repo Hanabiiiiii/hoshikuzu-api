@@ -1,0 +1,46 @@
+services:
+  hoshikuzu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: hoshikuzu
+    restart: unless-stopped
+
+    ports:
+      - "2525:2525"
+
+    environment:
+      CONFIG_PATH: /app/config.yaml
+
+    volumes:
+      # 持久化数据（SQLite + 图片文件）
+      - ./data:/app/data
+      - ./storage:/app/storage
+
+      # 配置文件只读挂载
+      # ⚠️ 启动前必须先执行：cp config.example.yaml config.yaml
+      #    并编辑 config.yaml 填入 admin_token 和 sign_key
+      #    修改后需要 restart 容器生效
+      - ./config.yaml:/app/config.yaml:ro
+
+    # -----------------------------------------------------
+    # 健康检查
+    #
+    # /healthz 是公开接口，不做鉴权，返回 {"success":true}
+    # -----------------------------------------------------
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2525/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # -----------------------------------------------------
+    # 安全加固（可选，但推荐）
+    #
+    # no-new-privileges：禁止容器内进程提升权限
+    # 只读根文件系统若要开启，需要额外挂载 tmpfs
+    # -----------------------------------------------------
+    security_opt:
+      - no-new-privileges:true

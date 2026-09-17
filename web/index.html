@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f8eef6">
+  <meta name="description" content="火花花随机图 · 二次元随机图片 API">
+  <title>火花花随机图</title>
+  <link rel="stylesheet" href="/style.css?v=20260917-2">
+</head>
+
+<body class="is-guest">
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">
+        <span class="brand-icon">🎀</span>
+        <span>火花花随机图</span>
+      </div>
+      <div class="subtitle">
+        Random Image API
+        <span class="dot">·</span>
+        Gallery
+        <span class="dot">·</span>
+        Desktop / Mobile
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="openToken" class="btn" type="button" title="设置密钥">
+        <span class="btn-icon">🔑</span>
+        <span>密钥</span>
+      </button>
+
+      <button id="openUpload" class="btn primary upload-trigger admin-only" type="button">
+        <span class="btn-icon">＋</span>
+        <span>上传图片</span>
+      </button>
+
+      <button id="refreshBtn" class="btn" type="button">
+        <span class="btn-icon">↻</span>
+        <span>刷新</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero card">
+    <div class="hero-main">
+      <div class="hero-badge">
+        <span class="status-dot"></span>
+        API ONLINE
+      </div>
+      <h1>火花花随机图</h1>
+      <p class="hero-description">
+        一个轻量、简单、易维护的二次元随机图片 API。
+        图片上传后自动根据实际分辨率归档到 Desktop / Mobile，并自动顺序编号。
+      </p>
+
+      <div class="hero-features">
+        <span>✦ 自动分类</span>
+        <span>✦ 顺序编号</span>
+        <span>✦ 批量管理</span>
+        <span>✦ 移动端适配</span>
+      </div>
+
+      <div class="quick-links">
+        <a id="randomApiLink" class="btn" href="/api/random?type=auto" target="_blank" rel="noopener">
+          <span>🎲</span>
+          随机图片
+        </a>
+        <a class="btn" href="/healthz" target="_blank" rel="noopener">
+          <span>♡</span>
+          健康检查
+        </a>
+      </div>
+    </div>
+
+    <div class="api-panel">
+      <div class="api-panel-header">
+        <div>
+          <div class="api-label">自动随机 API</div>
+          <div class="api-description">根据当前屏幕宽度自动选择图片</div>
+        </div>
+        <div class="api-status">
+          <span class="status-dot"></span>
+          READY
+        </div>
+      </div>
+
+      <div class="api-row">
+        <div class="api-code-wrap">
+          <span class="api-method">GET</span>
+          <code id="apiUrl">/api/random?type=auto</code>
+        </div>
+        <button id="copyApi" class="copy-btn" type="button" title="复制 API URL">
+          <span>复制</span>
+        </button>
+      </div>
+
+      <div class="mode-switch mode-switch--api" role="tablist" aria-label="API 模式">
+        <button class="mode-btn active" data-mode="thumb" type="button" title="API 返回压缩图">
+          <span class="mode-icon">⚡</span>
+          <span>加速模式</span>
+        </button>
+        <button class="mode-btn" data-mode="original" type="button" title="API 返回原图">
+          <span class="mode-icon">🖼️</span>
+          <span>原图模式</span>
+        </button>
+      </div>
+
+      <div class="api-meta">
+        <span>当前宽度 <strong id="currentWidth">-</strong></span>
+        <span>自动分类 <strong id="currentDeviceType">-</strong></span>
+      </div>
+    </div>
+
+    <!-- 白名单激活提示条 -->
+    <div class="whitelist-strip" id="whitelistStrip" hidden>
+      <span class="whitelist-icon">🛡️</span>
+      <span class="whitelist-text">
+        白名单已激活。白名单内直接使用管理员密钥，白名单外可点击
+        <button id="generateTempToken" class="whitelist-btn" type="button">生成临时密钥</button>
+        （密钥会输出到服务器日志，请到服务器上查看）。
+      </span>
+    </div>
+
+    <!-- 访客信息条 -->
+    <div class="visitor-strip" id="visitorStrip" hidden>
+      <div class="visitor-left">
+        <span class="visitor-icon">🌸</span>
+        <span class="visitor-title">访客密钥</span>
+        <div class="visitor-token">
+          <code id="guestTokenDisplay">guest</code>
+          <button id="copyGuestToken" class="copy-btn small" type="button" title="复制访客密钥">
+            <span>复制</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="visitor-right">
+        <div class="visitor-quota" title="API 调用每日配额">
+          <span class="quota-label">API</span>
+          <span class="quota-value">
+            压缩图 <strong id="guestApiThumb">-</strong>
+            · 原图 <strong id="guestApiOriginal">-</strong>
+          </span>
+        </div>
+
+        <span class="visitor-dot">·</span>
+
+        <div class="visitor-quota" title="图片下载每日配额">
+          <span class="quota-label">下载</span>
+          <span class="quota-value">
+            压缩图 <strong id="guestDownloadThumb">-</strong>
+            · 原图 <strong id="guestDownloadOriginal">-</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="toolbar card">
+    <div class="toolbar-left">
+      <div class="tabs">
+        <button class="tab active" data-type="desktop" type="button">
+          <span class="tab-icon">🖥</span>
+          <span>Desktop</span>
+        </button>
+        <button class="tab" data-type="mobile" type="button">
+          <span class="tab-icon">📱</span>
+          <span>Mobile</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <label class="download-original-toggle" title="勾选后下载原图，未勾选下载压缩图">
+        <input type="checkbox" id="downloadOriginal">
+        <span>下载原图</span>
+      </label>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="selection-group">
+        <span id="selectionInfo" class="selection-info">已选 0</span>
+        <button id="selectAll" class="tool-btn" type="button">全选</button>
+        <button id="clearSelection" class="tool-btn" type="button">清除</button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <button id="batchDownload" class="tool-btn" type="button" disabled>
+        ↓ 下载
+      </button>
+      <button id="batchDelete" class="tool-btn danger admin-only" type="button" disabled>
+        × 删除
+      </button>
+    </div>
+  </section>
+
+  <section class="gallery-head">
+    <div class="gallery-heading">
+      <div class="gallery-title-row">
+        <h2>图片画廊</h2>
+        <span id="currentTypeBadge" class="type-badge desktop">Desktop</span>
+      </div>
+      <div id="galleryStats" class="muted">加载中...</div>
+    </div>
+
+    <div class="pagination">
+      <button id="prevPage" class="page-btn" type="button" aria-label="上一页">‹</button>
+      <span id="pageInfo">1 / 1</span>
+      <button id="nextPage" class="page-btn" type="button" aria-label="下一页">›</button>
+    </div>
+  </section>
+
+  <main id="gallery" class="gallery"></main>
+
+  <footer class="footer">
+    <span>🎀 火花花随机图</span>
+    <span class="footer-separator">·</span>
+    <span>Random Image API</span>
+  </footer>
+
+</div>
+
+<!-- 密钥弹窗 -->
+<div id="tokenModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-backdrop" data-close-token></div>
+
+  <section class="modal-card token-card" role="dialog" aria-modal="true" aria-labelledby="tokenTitle">
+    <div class="modal-head">
+      <div class="modal-title-wrap">
+        <div class="eyebrow">ADMIN ACCESS</div>
+        <h2 id="tokenTitle">设置密钥</h2>
+        <p>填入管理员密钥或临时密钥可解锁上传和删除功能。</p>
+      </div>
+      <button id="closeToken" class="close-btn" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <div class="token-card-body">
+      <label class="token-field">
+        <span class="token-field-icon">🔑</span>
+        <input
+                id="tokenInput"
+                class="token-field-input"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Admin Token 或 临时密钥"
+        >
+      </label>
+
+      <label class="remember">
+        <input id="rememberKey" type="checkbox" checked>
+        <span>记住密钥</span>
+      </label>
+
+      <div class="token-actions">
+        <button id="saveToken" class="btn primary" type="button">
+          <span>✓</span>
+          保存
+        </button>
+        <button id="clearToken" class="btn" type="button">
+          <span>×</span>
+          清空
+        </button>
+      </div>
+
+      <div id="tokenResult" class="result"></div>
+    </div>
+  </section>
+</div>
+
+<!-- 上传弹窗 -->
+<div id="uploadModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-backdrop" data-close-upload></div>
+
+  <section class="modal-card upload-card" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <div class="modal-head">
+      <div class="modal-title-wrap">
+        <div class="eyebrow">UPLOAD CENTER</div>
+        <h2 id="uploadTitle">批量上传图片</h2>
+        <p>系统会自动识别图片分辨率并归类到 Desktop / Mobile。不支持 GIF 动图。</p>
+      </div>
+      <button id="closeUpload" class="close-btn" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <div class="upload-body">
+      <div id="dropZone" class="drop-zone">
+        <div class="drop-decoration">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="drop-icon">🖼️</div>
+        <strong>点击选择图片</strong>
+        <span class="drop-description">或者把图片拖拽到这里</span>
+
+        <div class="drop-types">
+          <span>JPG</span>
+          <span>JPEG</span>
+          <span>PNG</span>
+          <span>WEBP</span>
+        </div>
+
+        <div class="drop-limit">
+          单张 ≤ 50 MB
+          <span>·</span>
+          单批 ≤ 100 张
+          <span>·</span>
+          总大小 ≤ 500 MB
+        </div>
+
+        <div class="drop-limit drop-limit-note">
+          不支持 GIF（动图无法生成缩略图）
+        </div>
+
+        <input
+                id="fileInput"
+                type="file"
+                multiple
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                hidden
+        >
+      </div>
+
+      <div class="upload-meta">
+        <div class="upload-summary">
+          <span class="summary-icon">✦</span>
+          <span id="fileSummary">未选择文件</span>
+        </div>
+        <button id="clearFiles" class="text-btn" type="button">清空列表</button>
+      </div>
+
+      <div id="fileList" class="file-list"></div>
+    </div>
+
+    <div class="modal-foot upload-foot">
+      <button id="openTokenFromUpload" class="btn token-trigger" type="button" title="修改密钥">
+        <span class="btn-icon">🔑</span>
+        <span id="currentRoleLabel">访客 · 点击设置密钥</span>
+      </button>
+
+      <button id="startUpload" class="btn primary upload-start-btn" type="button" disabled>
+        <span>↑</span>
+        开始上传
+      </button>
+    </div>
+
+    <div id="uploadResult" class="result"></div>
+  </section>
+</div>
+
+<!-- 图片预览 -->
+<div id="previewModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-backdrop" data-close-preview></div>
+
+  <section class="preview-card" role="dialog" aria-modal="true">
+    <button id="closePreview" class="close-btn floating" type="button" aria-label="关闭预览">×</button>
+
+    <div class="preview-toolbar">
+      <span>图片预览</span>
+      <span id="previewCounter" class="preview-counter"></span>
+    </div>
+
+    <div id="previewStage" class="preview-image-wrap">
+      <div class="preview-spinner" aria-hidden="true"></div>
+
+      <img id="previewImg" alt="图片预览" decoding="async" draggable="false">
+
+      <button id="previewPrev" class="preview-nav prev" type="button" aria-label="上一张">‹</button>
+      <button id="previewNext" class="preview-nav next" type="button" aria-label="下一张">›</button>
+
+      <span id="previewError" class="preview-error">图片加载失败</span>
+    </div>
+
+    <div id="previewCaption" class="preview-caption"></div>
+  </section>
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script src="/app.js?v=20260917-2"></script>
+
+</body>
+</html>
