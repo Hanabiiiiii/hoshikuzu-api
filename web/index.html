@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f8eef6">
-  <meta name="description" content="火花花随机图 · 二次元随机图片 API">
-  <title>火花花随机图</title>
-  <link rel="stylesheet" href="/style.css?v=20260917-2">
+  <meta name="theme-color" content="#f6f4ff">
+  <meta name="description" content="星屑 · Hoshikuzu — 二次元随机图片 API">
+  <title>星屑 · Hoshikuzu</title>
+  <link rel="icon" type="image/png" href="/icons/logo.png">
+  <link rel="apple-touch-icon" href="/icons/logo.png">
+  <link rel="stylesheet" href="/style.css?v=20260918-6">
 </head>
 
 <body class="is-guest">
@@ -16,13 +18,18 @@
   <header class="topbar">
     <div class="brand-wrap">
       <div class="brand">
-        <span class="brand-icon">🎀</span>
-        <span>火花花随机图</span>
+        <span class="brand-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 1.5l1.6 6.4L20 9.5l-6.4 1.6L12 17.5l-1.6-6.4L4 9.5l6.4-1.6z"/>
+            <path d="M19 15l.8 3.2L23 19l-3.2.8L19 23l-.8-3.2L15 19l3.2-.8z"/>
+          </svg>
+        </span>
+        <span>星屑</span>
       </div>
       <div class="subtitle">
-        Random Image API
+        Hoshikuzu
         <span class="dot">·</span>
-        Gallery
+        Random Image API
         <span class="dot">·</span>
         Desktop / Mobile
       </div>
@@ -30,17 +37,23 @@
 
     <div class="top-actions">
       <button id="openToken" class="btn" type="button" title="设置密钥">
-        <span class="btn-icon">🔑</span>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        </svg>
         <span>密钥</span>
       </button>
 
       <button id="openUpload" class="btn primary upload-trigger admin-only" type="button">
-        <span class="btn-icon">＋</span>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
         <span>上传图片</span>
       </button>
 
       <button id="refreshBtn" class="btn" type="button">
-        <span class="btn-icon">↻</span>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </svg>
         <span>刷新</span>
       </button>
     </div>
@@ -52,26 +65,33 @@
         <span class="status-dot"></span>
         API ONLINE
       </div>
-      <h1>火花花随机图</h1>
+
+      <h1>星屑 · Hoshikuzu</h1>
+
       <p class="hero-description">
-        一个轻量、简单、易维护的二次元随机图片 API。
-        图片上传后自动根据实际分辨率归档到 Desktop / Mobile，并自动顺序编号。
+        从星河里捞起一片星光。
+        轻量、安全、易部署的二次元随机图片 API。
+        图片上传后自动按分辨率归档到 Desktop / Mobile，自动顺序编号。
       </p>
 
       <div class="hero-features">
-        <span>✦ 自动分类</span>
-        <span>✦ 顺序编号</span>
-        <span>✦ 批量管理</span>
-        <span>✦ 移动端适配</span>
+        <span>自动分类</span>
+        <span>顺序编号</span>
+        <span>批量管理</span>
+        <span>移动端适配</span>
       </div>
 
       <div class="quick-links">
         <a id="randomApiLink" class="btn" href="/api/random?type=auto" target="_blank" rel="noopener">
-          <span>🎲</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9C6.67 9 6 8.33 6 7.5S6.67 6 7.5 6 9 6.67 9 7.5 8.33 9 7.5 9zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5S17.33 9 16.5 9z"/>
+          </svg>
           随机图片
         </a>
         <a class="btn" href="/healthz" target="_blank" rel="noopener">
-          <span>♡</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
           健康检查
         </a>
       </div>
@@ -101,11 +121,15 @@
 
       <div class="mode-switch mode-switch--api" role="tablist" aria-label="API 模式">
         <button class="mode-btn active" data-mode="thumb" type="button" title="API 返回压缩图">
-          <span class="mode-icon">⚡</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+          </svg>
           <span>加速模式</span>
         </button>
         <button class="mode-btn" data-mode="original" type="button" title="API 返回原图">
-          <span class="mode-icon">🖼️</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+          </svg>
           <span>原图模式</span>
         </button>
       </div>
@@ -116,9 +140,12 @@
       </div>
     </div>
 
-    <!-- 白名单激活提示条 -->
     <div class="whitelist-strip" id="whitelistStrip" hidden>
-      <span class="whitelist-icon">🛡️</span>
+      <span class="whitelist-icon">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+        </svg>
+      </span>
       <span class="whitelist-text">
         白名单已激活。白名单内直接使用管理员密钥，白名单外可点击
         <button id="generateTempToken" class="whitelist-btn" type="button">生成临时密钥</button>
@@ -126,10 +153,13 @@
       </span>
     </div>
 
-    <!-- 访客信息条 -->
     <div class="visitor-strip" id="visitorStrip" hidden>
       <div class="visitor-left">
-        <span class="visitor-icon">🌸</span>
+        <span class="visitor-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 1.5l1.6 6.4L20 9.5l-6.4 1.6L12 17.5l-1.6-6.4L4 9.5l6.4-1.6z"/>
+          </svg>
+        </span>
         <span class="visitor-title">访客密钥</span>
         <div class="visitor-token">
           <code id="guestTokenDisplay">guest</code>
@@ -165,11 +195,15 @@
     <div class="toolbar-left">
       <div class="tabs">
         <button class="tab active" data-type="desktop" type="button">
-          <span class="tab-icon">🖥</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 3H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.11-.9-2-2-2zm0 14H3V5h18v12z"/>
+          </svg>
           <span>Desktop</span>
         </button>
         <button class="tab" data-type="mobile" type="button">
-          <span class="tab-icon">📱</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17 1H7c-1.1 0-1.99.9-1.99 2L5 21c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/>
+          </svg>
           <span>Mobile</span>
         </button>
       </div>
@@ -192,10 +226,16 @@
       <div class="toolbar-divider"></div>
 
       <button id="batchDownload" class="tool-btn" type="button" disabled>
-        ↓ 下载
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        下载
       </button>
       <button id="batchDelete" class="tool-btn danger admin-only" type="button" disabled>
-        × 删除
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+        删除
       </button>
     </div>
   </section>
@@ -219,9 +259,34 @@
   <main id="gallery" class="gallery"></main>
 
   <footer class="footer">
-    <span>🎀 火花花随机图</span>
-    <span class="footer-separator">·</span>
-    <span>Random Image API</span>
+    <div class="footer-row">
+      <span class="footer-brand">
+        <span class="footer-brand-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 1.5l1.6 6.4L20 9.5l-6.4 1.6L12 17.5l-1.6-6.4L4 9.5l6.4-1.6z"/>
+          </svg>
+        </span>
+        <span>星屑 · Hoshikuzu</span>
+      </span>
+    </div>
+
+    <div class="footer-row footer-row--links">
+      <a class="footer-link" href="https://fwneko.com" target="_blank" rel="noopener">
+        <svg class="icon footer-link-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5L12 3l9 7.5"/>
+          <path d="M5 9.5V21h14V9.5"/>
+          <path d="M10 21v-6h4v6"/>
+        </svg>
+        <span>花火</span>
+      </a>
+      <span class="footer-separator">·</span>
+      <a class="footer-link" href="https://github.com/Hanabiiiiii/hoshikuzu-api" target="_blank" rel="noopener">
+        <svg class="icon footer-link-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.71-4.04-1.58-4.04-1.58-.55-1.36-1.34-1.72-1.34-1.72-1.1-.73.08-.72.08-.72 1.21.08 1.85 1.22 1.85 1.22 1.08 1.8 2.83 1.28 3.52.98.11-.77.42-1.28.76-1.58-2.67-.29-5.47-1.3-5.47-5.79 0-1.28.47-2.32 1.23-3.14-.12-.29-.53-1.47.12-3.06 0 0 1-.31 3.28 1.2.95-.26 1.97-.39 2.98-.39s2.03.13 2.98.39c2.28-1.52 3.28-1.2 3.28-1.2.65 1.59.24 2.77.12 3.06.77.82 1.23 1.86 1.23 3.14 0 4.5-2.8 5.49-5.48 5.78.43.36.81 1.08.81 2.18 0 1.57-.01 2.84-.01 3.23 0 .31.21.68.83.56C20.57 21.88 24 17.49 24 12.29 24 5.78 18.63.5 12 .5z"/>
+        </svg>
+        <span>GitHub</span>
+      </a>
+    </div>
   </footer>
 
 </div>
@@ -242,7 +307,11 @@
 
     <div class="token-card-body">
       <label class="token-field">
-        <span class="token-field-icon">🔑</span>
+        <span class="token-field-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+          </svg>
+        </span>
         <input
                 id="tokenInput"
                 class="token-field-input"
@@ -259,11 +328,15 @@
 
       <div class="token-actions">
         <button id="saveToken" class="btn primary" type="button">
-          <span>✓</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
           保存
         </button>
         <button id="clearToken" class="btn" type="button">
-          <span>×</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
           清空
         </button>
       </div>
@@ -295,7 +368,11 @@
           <span></span>
         </div>
 
-        <div class="drop-icon">🖼️</div>
+        <div class="drop-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+          </svg>
+        </div>
         <strong>点击选择图片</strong>
         <span class="drop-description">或者把图片拖拽到这里</span>
 
@@ -329,7 +406,11 @@
 
       <div class="upload-meta">
         <div class="upload-summary">
-          <span class="summary-icon">✦</span>
+          <span class="summary-icon">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 1.5l1.6 6.4L20 9.5l-6.4 1.6L12 17.5l-1.6-6.4L4 9.5l6.4-1.6z"/>
+            </svg>
+          </span>
           <span id="fileSummary">未选择文件</span>
         </div>
         <button id="clearFiles" class="text-btn" type="button">清空列表</button>
@@ -340,12 +421,16 @@
 
     <div class="modal-foot upload-foot">
       <button id="openTokenFromUpload" class="btn token-trigger" type="button" title="修改密钥">
-        <span class="btn-icon">🔑</span>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        </svg>
         <span id="currentRoleLabel">访客 · 点击设置密钥</span>
       </button>
 
       <button id="startUpload" class="btn primary upload-start-btn" type="button" disabled>
-        <span>↑</span>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5z"/>
+        </svg>
         开始上传
       </button>
     </div>
@@ -383,7 +468,7 @@
 
 <div id="toast" class="toast" aria-live="polite"></div>
 
-<script src="/app.js?v=20260917-2"></script>
+<script src="/app.js?v=20260918-1"></script>
 
 </body>
 </html>

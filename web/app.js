@@ -420,12 +420,6 @@ function pickDisplayURL(item) {
     return item.thumbnail_url || item.url;
 }
 
-/*
- * imageCard 渲染。
- *
- * has_thumbnail 为 false 表示此图较小（< 200KB），没有独立缩略图，
- * 列表展示和下载都直接用原文件。在 meta 行加一个"小图"标记提示用户。
- */
 function imageCard(item) {
     const checked = state.selected.has(item.id) ? "checked" : "";
     const caption = `${item.original_name} · ${item.width}×${item.height} · ${formatBytes(item.size)}`;
@@ -881,6 +875,14 @@ async function batchDownload() {
 
 /* ===== 单张下载 ===== */
 
+/*
+ * 单张下载走 fetch + Blob。
+ *
+ * 文件名直接用前端已有的 original_name（含中文），
+ * 不去解析后端的 Content-Disposition。
+ *
+ * 缩略图模式下，文件内容是 JPEG 编码，把后缀换成 .jpg 更准确。
+ */
 async function downloadSingle(item) {
     if (!item) return;
 
@@ -916,11 +918,17 @@ async function downloadSingle(item) {
         return;
     }
 
-    const disposition = response.headers.get("Content-Disposition") || "";
-    const match = disposition.match(/filename="?([^";]+)"?/);
-    const filename = match
-        ? match[1]
-        : (item.original_name || item.filename || "image");
+    /*
+     * 用 original_name 作为文件名。
+     *
+     * 下载原图   → 保留原文件名和后缀
+     * 下载缩略图 → 内容是 JPEG，把后缀换成 .jpg
+     */
+    let filename = item.original_name || item.filename || "image";
+    if (!state.downloadOriginal) {
+        const base = filename.replace(/\.[^.]+$/, "");
+        filename = (base || "image") + ".jpg";
+    }
 
     const blob = await response.blob();
     const blobURL = URL.createObjectURL(blob);

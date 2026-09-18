@@ -94,6 +94,7 @@ func main() {
 	r.GET("/app.js", handler.WebJS)
 	r.GET("/style.css", handler.WebCSS)
 	r.GET("/healthz", handler.Health)
+	r.Static("/icons", "./web/icons")
 
 	r.GET("/images/:type/*path", h.ServeImage)
 

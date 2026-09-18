@@ -1,25 +1,34 @@
-:root {
-    --bg: #faf6fb;
+/* =========================================================
+   星屑 · Hoshikuzu — 主题样式
+   配色：星尘紫 · 暖金 · 星光银
+   ========================================================= */
 
-    --card: rgba(255, 255, 255, 0.9);
+:root {
+    --bg: #f6f4ff;
+
+    --card: rgba(255, 255, 255, 0.86);
     --card-strong: rgba(255, 255, 255, 0.98);
 
-    --text: #493c4c;
-    --muted: #96869a;
+    --text: #2d2640;
+    --muted: #8b82a8;
 
-    --line: rgba(191, 160, 194, 0.25);
+    --line: rgba(139, 92, 246, 0.18);
+    --line-strong: rgba(139, 92, 246, 0.32);
 
-    --accent: #c97da9;
-    --accent-2: #e4a7c9;
+    --accent: #8b5cf6;
+    --accent-2: #a78bfa;
 
-    --danger: #b94c71;
-    --success: #5c9874;
+    --danger: #e11d48;
+    --success: #10b981;
 
     --shadow:
-            0 22px 70px rgba(126, 84, 125, 0.12);
+            0 22px 70px rgba(76, 29, 149, 0.12);
 
     --shadow-hover:
-            0 28px 75px rgba(126, 84, 125, 0.16);
+            0 28px 75px rgba(76, 29, 149, 0.18);
+
+    --glow:
+            0 0 30px rgba(139, 92, 246, 0.18);
 
     --radius-xl: 28px;
     --radius-lg: 22px;
@@ -40,22 +49,110 @@ body {
 body {
     color: var(--text);
 
+    /* ============================================================
+       星夜背景 — 紫金混合星尘
+       ============================================================
+       结构：
+         1. 大范围光晕（3 层，紫/蓝/白）
+         2. 亮星（2.2~2.8px，约 16 颗）
+         3. 细星（1~1.6px，约 40 颗）
+         4. 白高光点（极小，约 6 颗）
+       ============================================================ */
     background:
-            radial-gradient(
-                    circle at 12% 7%,
-                    rgba(255, 222, 240, 0.82),
-                    transparent 28%
-            ),
-            radial-gradient(
-                    circle at 91% 87%,
-                    rgba(221, 215, 255, 0.64),
-                    transparent 31%
-            ),
-            radial-gradient(
-                    circle at 50% 42%,
-                    rgba(255, 255, 255, 0.45),
-                    transparent 42%
-            ),
+        /* ───── 1. 大范围光晕 ───── */
+            radial-gradient(circle at 12% 7%, rgba(196, 181, 253, 0.42), transparent 30%),
+            radial-gradient(circle at 91% 87%, rgba(147, 197, 253, 0.32), transparent 32%),
+            radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.55), transparent 44%),
+
+                /* ───── 2. 亮星 · 紫色（主体） ───── */
+            radial-gradient(circle 2.4px at 8% 14%, rgba(124, 58, 237, 0.72), transparent 100%),
+            radial-gradient(circle 2.8px at 22% 26%, rgba(139, 92, 246, 0.75), transparent 100%),
+            radial-gradient(circle 2.2px at 35% 8%, rgba(124, 58, 237, 0.68), transparent 100%),
+            radial-gradient(circle 2.6px at 48% 38%, rgba(139, 92, 246, 0.72), transparent 100%),
+            radial-gradient(circle 2.4px at 62% 18%, rgba(124, 58, 237, 0.7), transparent 100%),
+            radial-gradient(circle 2.8px at 74% 42%, rgba(139, 92, 246, 0.72), transparent 100%),
+            radial-gradient(circle 2.2px at 84% 22%, rgba(124, 58, 237, 0.68), transparent 100%),
+            radial-gradient(circle 2.6px at 92% 62%, rgba(139, 92, 246, 0.72), transparent 100%),
+            radial-gradient(circle 2.4px at 12% 58%, rgba(124, 58, 237, 0.7), transparent 100%),
+            radial-gradient(circle 2.8px at 28% 82%, rgba(139, 92, 246, 0.75), transparent 100%),
+            radial-gradient(circle 2.2px at 45% 92%, rgba(124, 58, 237, 0.68), transparent 100%),
+            radial-gradient(circle 2.6px at 58% 68%, rgba(139, 92, 246, 0.72), transparent 100%),
+            radial-gradient(circle 2.4px at 72% 88%, rgba(124, 58, 237, 0.7), transparent 100%),
+            radial-gradient(circle 2.8px at 88% 78%, rgba(139, 92, 246, 0.72), transparent 100%),
+            radial-gradient(circle 2.2px at 18% 48%, rgba(124, 58, 237, 0.68), transparent 100%),
+            radial-gradient(circle 2.6px at 96% 8%, rgba(139, 92, 246, 0.72), transparent 100%),
+
+                /* ───── 亮星 · 金色（点睛） ───── */
+            radial-gradient(circle 2.6px at 6% 68%, rgba(245, 158, 11, 0.62), transparent 100%),
+            radial-gradient(circle 2.4px at 42% 22%, rgba(251, 191, 36, 0.6), transparent 100%),
+            radial-gradient(circle 2.6px at 68% 58%, rgba(245, 158, 11, 0.62), transparent 100%),
+            radial-gradient(circle 2.4px at 90% 36%, rgba(251, 191, 36, 0.6), transparent 100%),
+            radial-gradient(circle 2.2px at 30% 62%, rgba(245, 158, 11, 0.58), transparent 100%),
+            radial-gradient(circle 2.4px at 78% 8%, rgba(251, 191, 36, 0.6), transparent 100%),
+
+                /* ───── 亮星 · 蓝色（点缀） ───── */
+            radial-gradient(circle 2.2px at 52% 82%, rgba(96, 165, 250, 0.6), transparent 100%),
+            radial-gradient(circle 2.4px at 82% 52%, rgba(147, 197, 253, 0.62), transparent 100%),
+
+                /* ───── 3. 细星 · 紫色主体 ───── */
+            radial-gradient(1.2px 1.2px at 4% 24%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 14% 6%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 20% 42%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 26% 18%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 32% 32%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 38% 52%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 44% 6%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 50% 28%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 56% 48%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 64% 8%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 68% 32%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 76% 62%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 80% 18%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 86% 48%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 94% 22%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 2% 44%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 10% 76%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 16% 92%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 24% 68%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 36% 84%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 42% 58%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 54% 92%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 60% 78%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 66% 42%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 74% 72%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 84% 82%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.4px 1.4px at 92% 92%, rgba(124, 58, 237, 0.62), transparent 100%),
+            radial-gradient(1px 1px at 98% 42%, rgba(139, 92, 246, 0.55), transparent 100%),
+            radial-gradient(1.2px 1.2px at 22% 8%, rgba(124, 58, 237, 0.6), transparent 100%),
+            radial-gradient(1px 1px at 46% 72%, rgba(139, 92, 246, 0.55), transparent 100%),
+
+                /* ───── 细星 · 金色 ───── */
+            radial-gradient(1.2px 1.2px at 12% 34%, rgba(245, 158, 11, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 30% 52%, rgba(251, 191, 36, 0.5), transparent 100%),
+            radial-gradient(1.2px 1.2px at 58% 8%, rgba(245, 158, 11, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 76% 28%, rgba(251, 191, 36, 0.5), transparent 100%),
+            radial-gradient(1.2px 1.2px at 88% 62%, rgba(245, 158, 11, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 34% 92%, rgba(251, 191, 36, 0.5), transparent 100%),
+            radial-gradient(1.2px 1.2px at 64% 88%, rgba(245, 158, 11, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 4% 88%, rgba(251, 191, 36, 0.5), transparent 100%),
+
+                /* ───── 细星 · 蓝色 ───── */
+            radial-gradient(1.2px 1.2px at 26% 72%, rgba(96, 165, 250, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 40% 12%, rgba(147, 197, 253, 0.5), transparent 100%),
+            radial-gradient(1.2px 1.2px at 72% 12%, rgba(96, 165, 250, 0.55), transparent 100%),
+            radial-gradient(1px 1px at 94% 72%, rgba(147, 197, 253, 0.5), transparent 100%),
+            radial-gradient(1.2px 1.2px at 50% 58%, rgba(96, 165, 250, 0.5), transparent 100%),
+
+                /* ───── 4. 白色高光点（很小但很亮） ───── */
+            radial-gradient(1px 1px at 16% 22%, rgba(255, 255, 255, 0.95), transparent 100%),
+            radial-gradient(1px 1px at 44% 42%, rgba(255, 255, 255, 0.9), transparent 100%),
+            radial-gradient(1px 1px at 70% 22%, rgba(255, 255, 255, 0.95), transparent 100%),
+            radial-gradient(1px 1px at 32% 58%, rgba(255, 255, 255, 0.9), transparent 100%),
+            radial-gradient(1px 1px at 82% 42%, rgba(255, 255, 255, 0.95), transparent 100%),
+            radial-gradient(1px 1px at 8% 52%, rgba(255, 255, 255, 0.9), transparent 100%),
+            radial-gradient(1px 1px at 60% 52%, rgba(255, 255, 255, 0.9), transparent 100%),
+            radial-gradient(1px 1px at 96% 88%, rgba(255, 255, 255, 0.9), transparent 100%),
+
             var(--bg);
 
     background-attachment: fixed;
@@ -71,6 +168,68 @@ body {
 
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+
+    position: relative;
+}
+
+/* ============================================================
+   星光闪烁层 — 一批更亮的星点周期性淡入淡出
+   ============================================================ */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+
+    background:
+        /* 闪烁紫星 */
+            radial-gradient(1.8px 1.8px at 8% 14%, rgba(167, 139, 250, 1), transparent 100%),
+            radial-gradient(2px 2px at 22% 26%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.6px 1.6px at 35% 8%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 48% 38%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.8px 1.8px at 62% 18%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 74% 42%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.6px 1.6px at 84% 22%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 92% 62%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.8px 1.8px at 12% 58%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 28% 82%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.6px 1.6px at 45% 92%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 58% 68%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.8px 1.8px at 72% 88%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 88% 78%, rgba(196, 181, 253, 1), transparent 100%),
+            radial-gradient(1.6px 1.6px at 18% 48%, rgba(139, 92, 246, 0.95), transparent 100%),
+            radial-gradient(2px 2px at 96% 8%, rgba(196, 181, 253, 1), transparent 100%),
+
+                /* 闪烁金星 */
+            radial-gradient(1.8px 1.8px at 6% 68%, rgba(251, 191, 36, 0.95), transparent 100%),
+            radial-gradient(1.8px 1.8px at 42% 22%, rgba(252, 211, 77, 0.95), transparent 100%),
+            radial-gradient(1.8px 1.8px at 68% 58%, rgba(251, 191, 36, 0.95), transparent 100%),
+            radial-gradient(1.8px 1.8px at 90% 36%, rgba(252, 211, 77, 0.95), transparent 100%),
+            radial-gradient(1.6px 1.6px at 30% 62%, rgba(251, 191, 36, 0.9), transparent 100%),
+            radial-gradient(1.8px 1.8px at 78% 8%, rgba(252, 211, 77, 0.95), transparent 100%),
+            radial-gradient(1.6px 1.6px at 54% 48%, rgba(251, 191, 36, 0.9), transparent 100%),
+
+                /* 闪烁蓝星 */
+            radial-gradient(1.8px 1.8px at 52% 82%, rgba(147, 197, 253, 1), transparent 100%),
+            radial-gradient(1.6px 1.6px at 82% 52%, rgba(191, 219, 254, 1), transparent 100%),
+            radial-gradient(1.8px 1.8px at 26% 12%, rgba(147, 197, 253, 1), transparent 100%),
+
+                /* 闪烁白点 */
+            radial-gradient(1.4px 1.4px at 16% 22%, rgba(255, 255, 255, 1), transparent 100%),
+            radial-gradient(1.4px 1.4px at 44% 42%, rgba(255, 255, 255, 1), transparent 100%),
+            radial-gradient(1.4px 1.4px at 70% 22%, rgba(255, 255, 255, 1), transparent 100%),
+            radial-gradient(1.4px 1.4px at 32% 58%, rgba(255, 255, 255, 1), transparent 100%);
+
+    opacity: 0.7;
+
+    animation: starfield-twinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes starfield-twinkle {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
 }
 
 body.modal-open {
@@ -106,21 +265,30 @@ code {
 
 .visually-hidden {
     position: absolute;
-
     width: 1px;
     height: 1px;
-
     margin: -1px;
     padding: 0;
-
     overflow: hidden;
-
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
-
     white-space: nowrap;
-
     border: 0;
+}
+
+/* =========================
+   内联 SVG 图标基础类
+   ========================= */
+
+.icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    flex-shrink: 0;
+
+    fill: currentColor;
+    stroke: none;
 }
 
 /* =========================
@@ -128,41 +296,22 @@ code {
    ========================= */
 
 .app {
-    width: min(
-            1440px,
-            calc(100% - 32px)
-    );
+    position: relative;
+    z-index: 1;
 
+    width: min(1440px, calc(100% - 32px));
     margin: 0 auto;
-
-    padding:
-            26px
-            0
-            70px;
+    padding: 26px 0 70px;
 }
 
 .card {
-    border:
-            1px solid
-            var(--line);
-
-    background:
-            var(--card);
-
-    backdrop-filter:
-            blur(10px);
-
-    -webkit-backdrop-filter:
-            blur(10px);
-
-    box-shadow:
-            var(--shadow);
-
-    border-radius:
-            var(--radius-xl);
-
-    contain:
-            layout style;
+    border: 1px solid var(--line);
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+    border-radius: var(--radius-xl);
+    contain: layout style;
 }
 
 /* =========================
@@ -171,12 +320,9 @@ code {
 
 .topbar {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
     gap: 18px;
-
     margin-bottom: 20px;
 }
 
@@ -186,26 +332,35 @@ code {
 
 .brand {
     display: flex;
-
     align-items: center;
-
     gap: 8px;
 
     font-size: 26px;
     font-weight: 850;
-
     letter-spacing: -0.3px;
+
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .brand-icon {
-    font-size: 23px;
+    font-size: 22px;
+    color: var(--accent);
+
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+    display: inline-flex;
+    align-items: center;
 }
 
 .subtitle {
     margin-top: 5px;
-
     color: var(--muted);
-
     font-size: 12px;
     letter-spacing: 0.15px;
 }
@@ -217,37 +372,23 @@ code {
 
 .top-actions {
     display: flex;
-
     align-items: center;
-
     gap: 9px;
 }
 
 .btn {
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
-
     gap: 7px;
 
     min-height: 42px;
-
     padding: 10px 15px;
 
-    border:
-            1px solid
-            var(--line);
-
-    border-radius:
-            var(--radius-sm);
-
-    background:
-            rgba(255, 255, 255, 0.76);
-
-    color:
-            var(--text);
-
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.76);
+    color: var(--text);
     text-decoration: none;
 
     transition:
@@ -259,33 +400,19 @@ code {
 
 .btn:hover {
     transform: translateY(-1px);
-
-    box-shadow:
-            0 8px 24px
-            rgba(126, 84, 125, 0.08);
+    box-shadow: 0 8px 24px rgba(76, 29, 149, 0.1);
+    border-color: var(--line-strong);
 }
 
 .btn.primary {
     border-color: transparent;
-
     color: #fff;
-
-    background:
-            linear-gradient(
-                    135deg,
-                    var(--accent-2),
-                    var(--accent)
-            );
-
-    box-shadow:
-            0 8px 22px
-            rgba(201, 125, 169, 0.2);
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    box-shadow: 0 8px 22px rgba(139, 92, 246, 0.28);
 }
 
 .btn.primary:hover {
-    box-shadow:
-            0 12px 28px
-            rgba(201, 125, 169, 0.3);
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.42);
 }
 
 .btn-icon {
@@ -298,15 +425,10 @@ code {
 
 .hero {
     display: grid;
-
-    grid-template-columns:
-    minmax(0, 1.2fr)
-    minmax(350px, 0.8fr);
-
+    grid-template-columns: minmax(0, 1.2fr) minmax(350px, 0.8fr);
     gap: 24px;
 
     padding: 28px;
-
     margin-bottom: 20px;
 }
 
@@ -316,77 +438,55 @@ code {
 
 .hero-badge {
     display: inline-flex;
-
     align-items: center;
-
     gap: 7px;
 
     padding: 6px 10px;
 
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.16);
-
+    border: 1px solid rgba(139, 92, 246, 0.22);
     border-radius: 999px;
-
-    background:
-            rgba(255, 243, 250, 0.75);
-
+    background: rgba(245, 243, 255, 0.75);
     color: var(--accent);
 
     font-size: 10px;
     font-weight: 850;
-
     letter-spacing: 1.4px;
 }
 
 .status-dot {
     width: 7px;
     height: 7px;
-
     border-radius: 50%;
-
     background: var(--success);
-
-    box-shadow:
-            0 0 0 4px
-            rgba(92, 152, 116, 0.12);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
 .hero h1 {
     margin: 14px 0 0;
 
-    font-size:
-            clamp(
-                    30px,
-                    4vw,
-                    42px
-            );
-
+    font-size: clamp(30px, 4vw, 42px);
     line-height: 1.12;
-
     letter-spacing: -1px;
+
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .hero-description {
     max-width: 720px;
-
     margin: 13px 0 0;
 
     color: var(--muted);
-
     line-height: 1.78;
-
     font-size: 14px;
 }
 
 .hero-features {
     display: flex;
-
     align-items: center;
-
     flex-wrap: wrap;
-
     gap: 7px;
 
     margin-top: 17px;
@@ -396,20 +496,16 @@ code {
     padding: 7px 10px;
 
     border-radius: 999px;
-
-    background:
-            rgba(245, 236, 246, 0.72);
-
-    color: var(--muted);
+    background: rgba(237, 233, 254, 0.72);
+    color: var(--accent);
 
     font-size: 11px;
+    font-weight: 600;
 }
 
 .quick-links {
     display: flex;
-
     flex-wrap: wrap;
-
     gap: 8px;
 
     margin-top: 19px;
@@ -417,46 +513,30 @@ code {
 
 .quick-links .btn {
     min-height: 38px;
-
     padding: 8px 13px;
-
     font-size: 12px;
 }
 
 /* =========================
-   API
+   API 面板
    ========================= */
 
 .api-panel {
     display: flex;
-
     flex-direction: column;
-
     justify-content: center;
 
     padding: 20px;
 
-    border:
-            1px solid
-            var(--line);
-
-    border-radius:
-            var(--radius-lg);
-
-    background:
-            linear-gradient(
-                    145deg,
-                    rgba(255, 249, 252, 0.82),
-                    rgba(246, 241, 254, 0.72)
-            );
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.85), rgba(237, 233, 254, 0.65));
 }
 
 .api-panel-header {
     display: flex;
-
     align-items: flex-start;
     justify-content: space-between;
-
     gap: 12px;
 
     margin-bottom: 12px;
@@ -469,79 +549,55 @@ code {
 
 .api-description {
     margin-top: 4px;
-
     color: var(--muted);
-
     font-size: 11px;
 }
 
 .api-status {
     display: inline-flex;
-
     align-items: center;
-
     gap: 6px;
 
     padding: 5px 8px;
 
     border-radius: 999px;
-
-    background:
-            rgba(92, 152, 116, 0.08);
-
+    background: rgba(16, 185, 129, 0.1);
     color: var(--success);
 
     font-size: 9px;
     font-weight: 850;
-
     letter-spacing: 1px;
 }
 
 .api-row {
     display: flex;
-
     align-items: center;
-
     gap: 8px;
 
     min-width: 0;
-
     padding: 8px;
 
-    border:
-            1px solid
-            var(--line);
-
-    border-radius:
-            var(--radius-sm);
-
-    background:
-            rgba(255, 255, 255, 0.76);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.82);
 }
 
 .api-code-wrap {
     display: flex;
-
     align-items: center;
-
     gap: 8px;
 
     min-width: 0;
-
     flex: 1;
 }
 
 .api-method {
     flex: 0 0 auto;
-
     padding: 5px 7px;
 
     border-radius: 8px;
-
     color: var(--accent);
-
-    background:
-            rgba(201, 125, 169, 0.1);
+    background: rgba(139, 92, 246, 0.12);
 
     font-size: 9px;
     font-weight: 850;
@@ -549,34 +605,24 @@ code {
 
 .api-row code {
     min-width: 0;
-
     flex: 1;
 
-    /* 把 auto 改成 hidden + ellipsis，超长 URL 用省略号，不显示滚动条 */
     overflow: hidden;
     text-overflow: ellipsis;
-
     white-space: nowrap;
 
     color: var(--text);
-
     font-size: 11px;
 }
 
 .copy-btn {
     flex: 0 0 auto;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 10px;
-
     padding: 7px 10px;
 
-    background:
-            rgba(249, 239, 247, 0.85);
-
+    background: rgba(245, 243, 255, 0.9);
     color: var(--accent);
 
     font-size: 11px;
@@ -585,31 +631,24 @@ code {
 }
 
 .copy-btn:hover {
-    background:
-            rgba(201, 125, 169, 0.13);
-
+    background: rgba(139, 92, 246, 0.14);
     transform: translateY(-1px);
 }
 
 .api-meta {
     display: flex;
-
     flex-wrap: wrap;
-
     align-items: center;
-
     gap: 16px;
 
     margin-top: 10px;
 
     color: var(--muted);
-
     font-size: 11px;
 }
 
 .api-meta strong {
     margin-left: 4px;
-
     color: var(--text);
 }
 
@@ -619,14 +658,11 @@ code {
 
 .toolbar {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
     gap: 14px;
 
     padding: 10px;
-
     margin-bottom: 24px;
 }
 
@@ -635,48 +671,35 @@ code {
 .selection-group,
 .tabs {
     display: flex;
-
     align-items: center;
-
     gap: 7px;
 }
 
 .toolbar-right {
     justify-content: flex-end;
-
     flex-wrap: wrap;
 }
 
 .tabs {
     padding: 4px;
-
     border-radius: 14px;
-
-    background:
-            rgba(245, 237, 247, 0.65);
+    background: rgba(237, 233, 254, 0.65);
 }
 
 .tab {
     display: inline-flex;
-
     align-items: center;
-
     gap: 7px;
 
     min-height: 38px;
-
     padding: 8px 13px;
 
     border: 1px solid transparent;
-
     border-radius: 10px;
-
     background: transparent;
-
     color: var(--muted);
 
     font-size: 12px;
-
     transition: 0.18s ease;
 }
 
@@ -686,12 +709,8 @@ code {
 
 .tab.active {
     color: #fff;
-
-    background: var(--accent);
-
-    box-shadow:
-            0 7px 18px
-            rgba(201, 125, 169, 0.17);
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    box-shadow: 0 7px 20px rgba(139, 92, 246, 0.28);
 }
 
 .tab-icon {
@@ -704,35 +723,30 @@ code {
 
 .selection-info {
     padding: 0 5px;
-
     white-space: nowrap;
-
     font-size: 11px;
 }
 
 .tool-btn {
-    min-height: 35px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 
+    min-height: 35px;
     padding: 7px 11px;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 10px;
-
-    background:
-            rgba(255, 255, 255, 0.7);
-
+    background: rgba(255, 255, 255, 0.7);
     color: var(--text);
 
     font-size: 11px;
-
     transition: 0.18s ease;
 }
 
 .tool-btn:hover {
     transform: translateY(-1px);
+    border-color: var(--line-strong);
 }
 
 .tool-btn.danger {
@@ -741,11 +755,8 @@ code {
 
 .toolbar-divider {
     width: 1px;
-
     height: 24px;
-
     background: var(--line);
-
     margin: 0 2px;
 }
 
@@ -755,10 +766,8 @@ code {
 
 .gallery-head {
     display: flex;
-
     align-items: flex-end;
     justify-content: space-between;
-
     gap: 15px;
 
     margin: 0 4px 15px;
@@ -770,37 +779,28 @@ code {
 
 .gallery-title-row {
     display: flex;
-
     align-items: center;
-
     gap: 9px;
 }
 
 .gallery-head h2 {
     margin: 0;
-
     font-size: 23px;
-
     letter-spacing: -0.3px;
 }
 
 .type-badge {
     display: inline-flex;
-
     align-items: center;
 
     padding: 5px 9px;
 
     border-radius: 999px;
-
-    background:
-            rgba(201, 125, 169, 0.1);
-
+    background: rgba(139, 92, 246, 0.12);
     color: var(--accent);
 
     font-size: 9px;
     font-weight: 850;
-
     letter-spacing: 0.8px;
 }
 
@@ -810,15 +810,12 @@ code {
 
 #galleryStats {
     margin-top: 5px;
-
     font-size: 11px;
 }
 
 .pagination {
     display: flex;
-
     align-items: center;
-
     gap: 7px;
 }
 
@@ -826,19 +823,12 @@ code {
     width: 36px;
     height: 36px;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 10px;
-
-    background:
-            rgba(255, 255, 255, 0.73);
-
+    background: rgba(255, 255, 255, 0.73);
     color: var(--text);
 
     font-size: 22px;
-
     line-height: 1;
 
     transition: 0.18s ease;
@@ -846,15 +836,13 @@ code {
 
 .page-btn:hover:not(:disabled) {
     transform: translateY(-1px);
+    border-color: var(--line-strong);
 }
 
 #pageInfo {
     min-width: 62px;
-
     text-align: center;
-
     color: var(--muted);
-
     font-size: 11px;
 }
 
@@ -864,15 +852,8 @@ code {
 
 .gallery {
     display: grid;
-
-    grid-template-columns:
-    repeat(
-      auto-fill,
-      minmax(225px, 1fr)
-    );
-
+    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
     gap: 15px;
-
     contain: layout style;
 }
 
@@ -881,77 +862,53 @@ code {
 
     padding: 66px 18px;
 
-    border:
-            1px dashed
-            var(--line);
-
-    border-radius:
-            var(--radius-lg);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.38);
 
     text-align: center;
-
     color: var(--muted);
-
-    background:
-            rgba(255, 255, 255, 0.38);
-
     font-size: 13px;
 }
 
 .image-card {
     overflow: hidden;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 20px;
-
-    background:
-            rgba(255, 255, 255, 0.76);
+    background: rgba(255, 255, 255, 0.78);
 
     content-visibility: auto;
     contain-intrinsic-size: auto 280px;
+    contain: layout style;
 
     transition:
             transform 0.2s ease,
-            border-color 0.2s ease;
-
-    contain: layout style;
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
 }
 
 .image-card:hover {
     transform: translateY(-3px);
-
     box-shadow: var(--shadow-hover);
-
-    border-color:
-            rgba(201, 125, 169, 0.3);
+    border-color: var(--line-strong);
 }
 
 .thumb-wrap {
     position: relative;
-
     overflow: hidden;
 }
 
 .thumb {
     display: block;
-
     width: 100%;
-
     aspect-ratio: 4 / 3;
-
     object-fit: cover;
-
-    background: #f1eaf1;
-
+    background: #ede9fe;
     cursor: zoom-in;
 
     transform: translateZ(0);
-
     backface-visibility: hidden;
-
     transition: transform 0.35s ease;
 }
 
@@ -961,39 +918,32 @@ code {
 
 .check {
     position: absolute;
-
     z-index: 3;
-
     top: 10px;
     left: 10px;
-
     width: 20px;
     height: 20px;
-
     accent-color: var(--accent);
 }
 
 .badge {
     position: absolute;
-
     z-index: 2;
-
     top: 10px;
     right: 10px;
 
     padding: 5px 8px;
 
     border-radius: 999px;
-
-    background:
-            rgba(48, 34, 49, 0.62);
-
+    background: rgba(20, 14, 35, 0.7);
     color: #fff;
 
     font-size: 9px;
     font-weight: 750;
-
     letter-spacing: .5px;
+
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .image-body {
@@ -1002,35 +952,44 @@ code {
 
 .filename {
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
 
     font-weight: 750;
-
     font-size: 13px;
 }
 
 .image-meta {
     margin-top: 5px;
-
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
 
     color: var(--muted);
-
     font-size: 11px;
+}
+
+.small-tag {
+    display: inline-block;
+
+    padding: 1px 6px;
+    margin-left: 3px;
+
+    border-radius: 5px;
+    background: rgba(139, 92, 246, 0.14);
+    color: var(--accent);
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+
+    vertical-align: middle;
+    cursor: help;
 }
 
 .image-actions {
     display: grid;
-
     grid-template-columns: 1fr 1fr;
-
     gap: 7px;
 
     margin-top: 11px;
@@ -1039,15 +998,12 @@ code {
 .image-actions a,
 .image-actions button {
     width: 100%;
-
     text-align: center;
 }
 
 .image-actions .btn {
     min-height: 34px;
-
     padding: 7px 9px;
-
     font-size: 11px;
 }
 
@@ -1057,20 +1013,95 @@ code {
 
 .footer {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 
-    justify-content: center;
-
-    gap: 7px;
-
-    margin-top: 38px;
-
+    margin-top: 44px;
     color: var(--muted);
+    font-size: 11px;
+}
 
-    font-size: 10px;
+.footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    font-weight: 700;
+    letter-spacing: 0.3px;
+
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.footer-brand-icon {
+    color: var(--accent);
+
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5));
+
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-row--links {
+    gap: 9px;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 5px 10px;
+
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--muted);
+    text-decoration: none;
+
+    font-size: 11px;
+
+    transition:
+            color 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease;
+}
+
+.footer-link:hover {
+    color: var(--accent);
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.24);
+}
+
+.footer-link-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    opacity: 0.78;
+    transition: opacity 0.18s ease;
+}
+
+.footer-link:hover .footer-link-icon {
+    opacity: 1;
 }
 
 .footer-separator {
-    opacity: .5;
+    opacity: 0.4;
+    font-size: 10px;
 }
 
 /* =========================
@@ -1079,13 +1110,10 @@ code {
 
 .modal {
     position: fixed;
-
     inset: 0;
-
     z-index: 50;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
@@ -1098,37 +1126,20 @@ code {
 
 .modal-backdrop {
     position: absolute;
-
     inset: 0;
 
-    background:
-            rgba(
-                    35,
-                    23,
-                    39,
-                    .72
-            );
-
-    backdrop-filter:
-            blur(4px);
-
-    -webkit-backdrop-filter:
-            blur(4px);
+    background: rgba(20, 14, 35, .74);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .modal-card,
 .preview-card {
     position: relative;
-
     z-index: 1;
 
-    border:
-            1px solid
-            rgba(255, 255, 255, .2);
-
-    box-shadow:
-            0 30px 90px
-            rgba(0, 0, 0, .22);
+    border: 1px solid rgba(255, 255, 255, .2);
+    box-shadow: 0 30px 90px rgba(20, 14, 35, .35);
 }
 
 /* =========================
@@ -1136,36 +1147,25 @@ code {
    ========================= */
 
 .upload-card {
-    width:
-            min(780px, 100%);
-
-    max-height:
-            min(92vh, 900px);
-
+    width: min(780px, 100%);
+    max-height: min(92vh, 900px);
     padding: 25px;
 
     border-radius: 28px;
-
-    background:
-            var(--card-strong);
+    background: var(--card-strong);
 
     display: flex;
-
     flex-direction: column;
-
     overflow: hidden;
 }
 
 .modal-head {
     display: flex;
-
     align-items: flex-start;
     justify-content: space-between;
-
     gap: 18px;
 
     margin-bottom: 18px;
-
     flex: 0 0 auto;
 }
 
@@ -1175,92 +1175,63 @@ code {
 
 .eyebrow {
     color: var(--accent);
-
     font-size: 10px;
     font-weight: 850;
-
     letter-spacing: 2px;
 }
 
 .modal-head h2 {
     margin: 4px 0 0;
-
     font-size: 25px;
-
     letter-spacing: -.5px;
 }
 
 .modal-head p {
     max-width: 580px;
-
     margin: 7px 0 0;
 
     color: var(--muted);
-
     font-size: 12px;
-
     line-height: 1.65;
 }
 
 .close-btn {
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
 
     width: 40px;
     height: 40px;
-
     flex: 0 0 auto;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 11px;
-
-    background:
-            rgba(255,255,255,.72);
-
+    background: rgba(255, 255, 255, .72);
     color: var(--text);
 
     font-size: 26px;
-
     line-height: 1;
 
     transition: 0.18s ease;
 }
 
 .close-btn:hover {
-    transform:
-            rotate(4deg)
-            scale(1.03);
+    transform: rotate(4deg) scale(1.03);
 }
-
-/* =========================
-   Upload Body（滚动容器）
-   ========================= */
 
 .upload-body {
     flex: 1 1 auto;
-
     min-height: 160px;
-
     width: 100%;
     min-width: 0;
 
     overflow-y: auto;
-
     overscroll-behavior: contain;
-
     -webkit-overflow-scrolling: touch;
-
     contain: layout paint;
 
     padding-right: 4px;
-
     margin-top: -4px;
-
     display: block;
 }
 
@@ -1269,9 +1240,7 @@ code {
 }
 
 .upload-body::-webkit-scrollbar-thumb {
-    background:
-            rgba(201, 125, 169, 0.24);
-
+    background: rgba(139, 92, 246, 0.28);
     border-radius: 3px;
 }
 
@@ -1287,35 +1256,20 @@ code {
     position: relative;
 
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
-
     gap: 7px;
 
     min-height: 225px;
-
     padding: 30px;
 
-    border:
-            2px dashed
-            rgba(201, 125, 169, .42);
-
+    border: 2px dashed rgba(139, 92, 246, .48);
     border-radius: 23px;
-
-    background:
-            linear-gradient(
-                    145deg,
-                    rgba(255, 245, 251, .9),
-                    rgba(246, 242, 255, .86)
-            );
+    background: linear-gradient(145deg, rgba(245, 243, 255, .92), rgba(237, 233, 254, .82));
 
     cursor: pointer;
-
     text-align: center;
-
     overflow: hidden;
 
     transition:
@@ -1326,119 +1280,81 @@ code {
 
 .drop-zone:hover {
     border-color: var(--accent);
-
     transform: translateY(-1px);
 }
 
 .drop-zone.dragging {
     border-color: var(--accent);
-
-    background:
-            linear-gradient(
-                    145deg,
-                    rgba(252, 232, 244, .95),
-                    rgba(239, 237, 255, .94)
-            );
-
+    background: linear-gradient(145deg, rgba(237, 233, 254, .95), rgba(224, 231, 255, .94));
     transform: scale(1.005);
 }
 
 .drop-decoration {
     position: absolute;
-
     inset: 0;
-
     pointer-events: none;
-
-    opacity: .65;
+    opacity: .7;
 }
 
 .drop-decoration span {
     position: absolute;
-
     width: 220px;
     height: 220px;
-
     border-radius: 50%;
-
-    filter: none;
 }
 
 .drop-decoration span:nth-child(1) {
     left: -80px;
     top: -80px;
-
-    background:
-            radial-gradient(
-                    circle,
-                    rgba(255, 183, 218, .5),
-                    transparent 70%
-            );
+    background: radial-gradient(circle, rgba(196, 181, 253, .55), transparent 70%);
 }
 
 .drop-decoration span:nth-child(2) {
     right: -90px;
     bottom: -80px;
-
-    background:
-            radial-gradient(
-                    circle,
-                    rgba(179, 172, 255, .38),
-                    transparent 70%
-            );
+    background: radial-gradient(circle, rgba(147, 197, 253, .48), transparent 70%);
 }
 
 .drop-decoration span:nth-child(3) {
     right: 30%;
     top: 15%;
-
-    background:
-            radial-gradient(
-                    circle,
-                    rgba(255, 255, 255, .9),
-                    transparent 70%
-            );
+    background: radial-gradient(circle, rgba(255, 255, 255, .9), transparent 70%);
 }
 
 .drop-icon {
     position: relative;
-
     z-index: 2;
 
     font-size: 45px;
+    color: var(--accent);
 
     margin-bottom: 4px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .drop-zone strong {
     position: relative;
-
     z-index: 2;
-
     font-size: 16px;
 }
 
 .drop-description {
     position: relative;
-
     z-index: 2;
-
     color: var(--muted);
-
     font-size: 12px;
 }
 
 .drop-types {
     position: relative;
-
     z-index: 2;
 
     display: flex;
-
     flex-wrap: wrap;
-
     justify-content: center;
-
     gap: 6px;
 
     margin-top: 7px;
@@ -1448,10 +1364,7 @@ code {
     padding: 4px 7px;
 
     border-radius: 7px;
-
-    background:
-            rgba(201, 125, 169, .1);
-
+    background: rgba(139, 92, 246, .12);
     color: var(--accent);
 
     font-size: 9px;
@@ -1460,20 +1373,23 @@ code {
 
 .drop-limit {
     position: relative;
-
     z-index: 2;
-
     margin-top: 4px;
 
     color: var(--muted);
-
     font-size: 10px;
 }
 
 .drop-limit span {
     margin: 0 4px;
-
     opacity: .45;
+}
+
+.drop-limit-note {
+    margin-top: 2px;
+    color: var(--danger);
+    font-size: 10px;
+    opacity: 0.9;
 }
 
 /* =========================
@@ -1482,10 +1398,8 @@ code {
 
 .upload-meta {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
     gap: 12px;
 
     margin-top: 15px;
@@ -1493,29 +1407,24 @@ code {
 
 .upload-summary {
     display: flex;
-
     align-items: center;
-
     gap: 7px;
 
     color: var(--muted);
-
     font-size: 12px;
 }
 
 .summary-icon {
     color: var(--accent);
+    display: inline-flex;
+    align-items: center;
 }
 
 .text-btn {
     border: 0;
-
     background: transparent;
-
     color: var(--accent);
-
     padding: 5px;
-
     font-size: 11px;
 }
 
@@ -1523,15 +1432,9 @@ code {
     text-decoration: underline;
 }
 
-/* =========================
-   文件列表（支持进度条 + 重试）
-   ========================= */
-
 .file-list {
     display: block;
-
     width: 100%;
-
     margin-top: 10px;
 }
 
@@ -1541,24 +1444,15 @@ code {
 
 .file-row {
     position: relative;
-
     display: block;
-
     padding: 10px 11px;
 
-    border:
-            1px solid
-            transparent;
-
+    border: 1px solid transparent;
     border-radius: 13px;
-
-    background:
-            rgba(247, 239, 248, .82);
+    background: rgba(245, 243, 255, .82);
 
     width: 100%;
-
     box-sizing: border-box;
-
     overflow: hidden;
 
     transition:
@@ -1568,31 +1462,22 @@ code {
 
 .file-row-main {
     display: flex;
-
     align-items: center;
-
     gap: 10px;
-
     min-height: 32px;
 }
 
 .file-name-wrap {
     flex: 1 1 0;
-
     min-width: 0;
-
     overflow: hidden;
 }
 
 .file-name {
     display: block;
-
     width: 100%;
-
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
 
     font-size: 12px;
@@ -1601,40 +1486,28 @@ code {
 
 .file-message {
     margin-top: 3px;
-
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
 
     color: var(--muted);
-
     font-size: 10px;
-
     font-variant-numeric: tabular-nums;
 }
 
 .file-status {
     flex: 0 0 auto;
-
     color: var(--muted);
-
     font-size: 10px;
-
     white-space: nowrap;
-
     font-variant-numeric: tabular-nums;
 }
 
 .file-action {
     flex: 0 0 auto;
-
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     gap: 4px;
 }
 
@@ -1643,13 +1516,10 @@ code {
 .retry-file {
     min-width: 30px;
     height: 30px;
-
     padding: 0 8px;
 
     border: 0;
-
     border-radius: 9px;
-
     background: transparent;
 
     font-size: 11px;
@@ -1665,84 +1535,55 @@ code {
 
 .cancel-file {
     color: var(--accent);
-
-    background:
-            rgba(201, 125, 169, .09);
+    background: rgba(139, 92, 246, .1);
 }
 
 .retry-file {
     color: var(--accent);
-
-    background:
-            rgba(201, 125, 169, .1);
-
+    background: rgba(139, 92, 246, .1);
     font-size: 14px;
-
     line-height: 1;
 }
 
 .remove-file:hover,
 .cancel-file:hover,
 .retry-file:hover {
-    background:
-            rgba(201, 125, 169, .18);
+    background: rgba(139, 92, 246, .2);
 }
 
-/* 成功勾选只在 .file-action 内生效，避免和 .file-row.file-success 撞车 */
 .file-action .file-success {
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
 
     width: 30px;
     height: 30px;
-
     color: var(--success);
-
     font-weight: 850;
 }
 
-/* 进度条 */
 .file-progress {
     position: relative;
-
     margin-top: 8px;
-
     height: 4px;
 
     border-radius: 999px;
-
-    background:
-            rgba(201, 125, 169, .12);
-
+    background: rgba(139, 92, 246, .14);
     overflow: hidden;
 }
 
 .file-progress-bar {
     height: 100%;
-
     width: 0;
 
     border-radius: inherit;
-
-    background:
-            linear-gradient(
-                    90deg,
-                    var(--accent-2),
-                    var(--accent)
-            );
-
-    transition:
-            width .18s ease;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    transition: width .18s ease;
 }
 
 .file-uploading {
-    border-color:
-            rgba(201, 125, 169, .2);
-
-    background:
-            rgba(245, 236, 248, .95);
+    border-color: rgba(139, 92, 246, .24);
+    background: rgba(237, 233, 254, .95);
 }
 
 .file-cancelled {
@@ -1750,11 +1591,8 @@ code {
 }
 
 .file-failed {
-    background:
-            rgba(255, 237, 242, .9);
-
-    border-color:
-            rgba(185, 76, 113, .18);
+    background: rgba(255, 228, 230, .9);
+    border-color: rgba(225, 29, 72, .2);
 }
 
 /* =========================
@@ -1763,74 +1601,51 @@ code {
 
 .modal-foot {
     display: flex;
-
     align-items: center;
-
     gap: 9px;
-
     flex-wrap: wrap;
 
     margin-top: 15px;
-
     flex: 0 0 auto;
 }
 
 .remember {
     display: inline-flex;
-
     align-items: center;
-
     gap: 6px;
 
     color: var(--muted);
-
     font-size: 11px;
-
     white-space: nowrap;
 }
 
 .token-wrap {
     display: flex;
-
     align-items: center;
-
     gap: 7px;
 
     min-width: 200px;
-
     flex: 1;
-
     padding: 0 10px;
 
-    border:
-            1px solid
-            var(--line);
-
+    border: 1px solid var(--line);
     border-radius: 12px;
-
-    background:
-            rgba(255, 255, 255, .8);
+    background: rgba(255, 255, 255, .8);
 }
 
 .token-icon {
     opacity: .7;
-
     font-size: 12px;
 }
 
 .token-input {
     min-width: 0;
-
     flex: 1;
 
     border: 0;
-
     outline: none;
-
     padding: 10px 0;
-
     background: transparent;
-
     color: var(--text);
 
     font-size: 11px;
@@ -1842,18 +1657,23 @@ code {
 
 .result {
     min-height: 20px;
-
     margin-top: 10px;
 
     color: var(--muted);
-
     font-size: 11px;
-
     line-height: 1.6;
-
     white-space: pre-wrap;
-
     flex: 0 0 auto;
+}
+
+.result.is-error {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.result.is-success {
+    color: var(--success);
+    font-weight: 600;
 }
 
 /* =========================
@@ -1861,52 +1681,39 @@ code {
    ========================= */
 
 .preview-card {
-    width:
-            min(1200px, 100%);
-
+    width: min(1200px, 100%);
     max-height: 92vh;
-
     padding: 12px;
 
     border-radius: 23px;
-
-    background:
-            rgba(27, 20, 29, .96);
+    background: rgba(14, 9, 26, .97);
 }
 
 .preview-toolbar {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
     gap: 12px;
 
     padding: 3px 4px 10px;
 
-    color: #d9ceda;
-
+    color: #d9d3ea;
     font-size: 11px;
 }
 
 .preview-counter {
-    color: #a495a6;
-
+    color: #a495c4;
     font-variant-numeric: tabular-nums;
-
     letter-spacing: 0.4px;
 }
 
 .preview-image-wrap {
     position: relative;
-
     display: flex;
-
     align-items: center;
     justify-content: center;
 
     min-height: 150px;
-
     overflow: hidden;
 
     border-radius: 15px;
@@ -1914,19 +1721,14 @@ code {
 
 .preview-card img {
     display: block;
-
     max-width: 100%;
-
     max-height: 79vh;
 
     object-fit: contain;
-
     border-radius: 15px;
 
     cursor: zoom-in;
-
     user-select: none;
-
     -webkit-user-drag: none;
 
     transition: transform 0.25s ease;
@@ -1934,47 +1736,32 @@ code {
 
 .preview-card img.zoomed {
     cursor: zoom-out;
-
     transition: transform 0.18s ease;
 }
 
 .preview-nav {
     position: absolute;
-
     top: calc(50% - 21px);
-
     z-index: 4;
 
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
 
     width: 42px;
     height: 42px;
-
     padding: 0;
 
-    border:
-            1px solid
-            rgba(255, 255, 255, 0.14);
-
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 50%;
-
-    background:
-            rgba(20, 15, 22, 0.55);
-
+    background: rgba(20, 15, 22, 0.55);
     color: #fff;
 
     font-size: 22px;
-
     line-height: 1;
 
-    backdrop-filter:
-            blur(6px);
-
-    -webkit-backdrop-filter:
-            blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 
     transition:
             background 0.18s ease,
@@ -1982,13 +1769,11 @@ code {
 }
 
 .preview-nav:hover:not(:disabled) {
-    background:
-            rgba(20, 15, 22, 0.8);
+    background: rgba(139, 92, 246, 0.42);
 }
 
 .preview-nav:disabled {
     opacity: 0;
-
     pointer-events: none;
 }
 
@@ -2002,24 +1787,17 @@ code {
 
 .preview-spinner {
     position: absolute;
-
     top: calc(50% - 17px);
     left: calc(50% - 17px);
 
     width: 34px;
     height: 34px;
 
-    border:
-            2px solid
-            rgba(255, 255, 255, 0.16);
-
-    border-top-color:
-            rgba(255, 255, 255, 0.8);
-
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    border-top-color: rgba(167, 139, 250, 0.9);
     border-radius: 50%;
 
     opacity: 0;
-
     pointer-events: none;
 
     transition: opacity 0.2s ease;
@@ -2027,9 +1805,7 @@ code {
 
 .preview-image-wrap.loading .preview-spinner {
     opacity: 1;
-
-    animation:
-            preview-spin 0.8s linear infinite;
+    animation: preview-spin 0.8s linear infinite;
 }
 
 @keyframes preview-spin {
@@ -2040,27 +1816,20 @@ code {
 
 .preview-error {
     position: absolute;
-
     left: 50%;
     bottom: 12px;
-
     z-index: 3;
 
     padding: 6px 13px;
 
     border-radius: 999px;
-
-    background:
-            rgba(185, 76, 113, 0.22);
-
-    color: #f6c9d8;
+    background: rgba(225, 29, 72, 0.28);
+    color: #fecdd3;
 
     font-size: 11px;
 
     opacity: 0;
-
     transform: translateX(-50%);
-
     pointer-events: none;
 
     transition: opacity 0.2s ease;
@@ -2072,30 +1841,20 @@ code {
 
 .floating {
     position: absolute;
-
     top: 14px;
     right: 14px;
-
     z-index: 3;
 
     color: #fff;
-
-    background:
-            rgba(20, 15, 22, .58);
-
-    border-color:
-            rgba(255, 255, 255, .16);
+    background: rgba(20, 15, 22, .58);
+    border-color: rgba(255, 255, 255, .16);
 }
 
 .preview-caption {
     padding: 10px 4px 2px;
-
     color: #d8cbd9;
-
     text-align: center;
-
     font-size: 11px;
-
     line-height: 1.55;
 }
 
@@ -2105,60 +1864,483 @@ code {
 
 .toast {
     position: fixed;
-
     left: 50%;
     bottom: 28px;
-
     z-index: 100;
 
-    max-width:
-            calc(100vw - 32px);
-
-    transform:
-            translate(-50%, 20px);
-
+    max-width: calc(100vw - 32px);
+    transform: translate(-50%, 20px);
     padding: 10px 15px;
 
-    border:
-            1px solid
-            rgba(255, 255, 255, .16);
-
+    border: 1px solid rgba(255, 255, 255, .16);
     border-radius: 999px;
-
-    background:
-            rgba(45, 33, 48, .88);
-
+    background: rgba(35, 25, 60, .92);
     color: #fff;
 
-    box-shadow:
-            0 15px 45px
-            rgba(0,0,0,.18);
+    box-shadow: 0 15px 45px rgba(20, 14, 35, .35);
 
     font-size: 11px;
 
     opacity: 0;
-
     pointer-events: none;
 
     transition: .25s ease;
 
-    backdrop-filter:
-            blur(8px);
-
-    -webkit-backdrop-filter:
-            blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .toast.show {
     opacity: 1;
-
-    transform:
-            translate(-50%, 0);
+    transform: translate(-50%, 0);
 }
 
 /* =========================
-   Responsive
+   模式切换
    ========================= */
+
+.mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+
+    padding: 3px;
+
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 10px;
+    background: rgba(237, 233, 254, 0.65);
+}
+
+.mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    min-height: 28px;
+    padding: 5px 10px;
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition:
+            color 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease;
+}
+
+.mode-btn:hover {
+    color: var(--text);
+}
+
+.mode-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+}
+
+/* =========================
+   下载原图开关
+   ========================= */
+
+.download-original-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 5px 8px;
+
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--muted);
+
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+
+    transition:
+            color 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease;
+}
+
+.download-original-toggle:hover {
+    color: var(--text);
+}
+
+.download-original-toggle input {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.download-original-toggle input:checked + span {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* =========================
+   角色控制
+   ========================= */
+
+body.is-guest .admin-only {
+    display: none !important;
+}
+
+/* =========================================================
+   API 卡片里的模式切换
+   ========================================================= */
+
+.mode-switch--api {
+    width: 100%;
+    margin-top: 10px;
+
+    display: flex;
+    justify-content: stretch;
+}
+
+.mode-switch--api .mode-btn {
+    flex: 1;
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    border-radius: 9px;
+    gap: 5px;
+}
+
+.mode-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* =========================================================
+   密钥弹窗
+   ========================================================= */
+
+.token-card {
+    width: min(440px, 100%);
+    max-height: none;
+    padding: 24px;
+
+    border-radius: 24px;
+    background: var(--card-strong);
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.token-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.token-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 0 12px;
+
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.8);
+
+    transition:
+            border-color 0.18s ease,
+            box-shadow 0.18s ease;
+}
+
+.token-field:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.token-field-icon {
+    font-size: 14px;
+    opacity: 0.7;
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+}
+
+.token-field-input {
+    flex: 1;
+    min-width: 0;
+
+    padding: 12px 0;
+
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+
+    font-size: 13px;
+}
+
+.token-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.token-actions .btn {
+    flex: 1;
+    min-height: 40px;
+    font-size: 12px;
+}
+
+/* =========================================================
+   上传弹窗底部
+   ========================================================= */
+
+.upload-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    margin-top: 15px;
+    flex: 0 0 auto;
+}
+
+.token-trigger {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    justify-content: flex-start;
+    text-align: left;
+
+    padding: 8px 12px;
+
+    font-size: 11.5px;
+    color: var(--muted);
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.token-trigger:hover {
+    color: var(--text);
+}
+
+.token-trigger .icon {
+    font-size: 13px;
+}
+
+.upload-foot .upload-start-btn {
+    flex: 0 0 auto;
+}
+
+/* =========================================================
+   访客信息条
+   ========================================================= */
+
+.visitor-strip {
+    grid-column: 1 / -1;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    margin-top: 4px;
+    padding: 12px 14px;
+
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.85), rgba(237, 233, 254, 0.75));
+}
+
+.visitor-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.visitor-icon {
+    font-size: 15px;
+    line-height: 1;
+    color: var(--accent);
+
+    display: inline-flex;
+    align-items: center;
+}
+
+.visitor-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.visitor-token {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 3px 4px 3px 10px;
+
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.visitor-token code {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.visitor-right {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.visitor-quota {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quota-label {
+    padding: 2px 6px;
+
+    border-radius: 5px;
+    background: rgba(139, 92, 246, 0.14);
+    color: var(--accent);
+
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.quota-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.quota-value strong {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.visitor-dot {
+    opacity: 0.45;
+}
+
+.copy-btn.small {
+    padding: 4px 8px;
+    font-size: 10.5px;
+    border-radius: 8px;
+    flex: 0 0 auto;
+}
+
+/* =========================================================
+   白名单激活提示条
+   ========================================================= */
+
+.whitelist-strip {
+    grid-column: 1 / -1;
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-top: 4px;
+    padding: 12px 14px;
+
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.85), rgba(237, 233, 254, 0.75));
+
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.whitelist-icon {
+    font-size: 15px;
+    line-height: 1;
+    flex: 0 0 auto;
+    color: var(--accent);
+
+    display: inline-flex;
+    align-items: center;
+}
+
+.whitelist-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.whitelist-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 4px 10px;
+    margin: 0 2px;
+
+    border: 1px solid rgba(139, 92, 246, 0.42);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--accent);
+
+    font-size: 11.5px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease;
+}
+
+.whitelist-btn:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.16);
+    border-color: var(--accent);
+}
+
+.whitelist-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.whitelist-strip[hidden],
+.visitor-strip[hidden] {
+    display: none !important;
+}
+
+.api-row code[title] {
+    cursor: help;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
 
 @media (max-width: 1050px) {
     .hero {
@@ -2184,14 +2366,11 @@ code {
 
 @media (max-width: 640px) {
 
-    /* ---------- 全局 ---------- */
-
     .app {
         width: 100%;
         padding: 10px 10px 40px;
     }
 
-    /* 关键：修复所有 grid/flex 子项溢出的根源 */
     .hero-main,
     .api-panel,
     .gallery-heading,
@@ -2201,8 +2380,6 @@ code {
     .modal-title-wrap {
         min-width: 0;
     }
-
-    /* ---------- 顶部 ---------- */
 
     .topbar {
         flex-direction: column;
@@ -2228,7 +2405,6 @@ code {
         font-size: 18px;
     }
 
-    /* 手机上不需要副标题，省空间 */
     .subtitle {
         display: none;
     }
@@ -2246,16 +2422,8 @@ code {
         border-radius: 10px;
     }
 
-    .btn-icon {
-        font-size: 14px;
-    }
-
-    /* ---------- Hero ---------- */
-
     .hero {
-        /* 关键：minmax(0, 1fr) 而不是 1fr，防止内容撑破 */
         grid-template-columns: minmax(0, 1fr);
-
         padding: 16px;
         gap: 14px;
         border-radius: 18px;
@@ -2271,7 +2439,7 @@ code {
     .status-dot {
         width: 6px;
         height: 6px;
-        box-shadow: 0 0 0 3px rgba(92, 152, 116, 0.12);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
     .hero h1 {
@@ -2285,7 +2453,6 @@ code {
         margin: 8px 0 0;
         font-size: 12px;
         line-height: 1.65;
-        /* 兜底：长词/URL 也强制换行 */
         word-break: break-word;
         overflow-wrap: anywhere;
     }
@@ -2312,8 +2479,6 @@ code {
         font-size: 11.5px;
         border-radius: 10px;
     }
-
-    /* ---------- API 面板 ---------- */
 
     .api-panel {
         padding: 12px;
@@ -2357,7 +2522,6 @@ code {
         border-radius: 6px;
     }
 
-    /* 关键：URL 太长，用省略号而不是撑破卡片 */
     .api-row code {
         font-size: 10.5px;
         white-space: nowrap;
@@ -2376,8 +2540,6 @@ code {
         gap: 12px;
         font-size: 10.5px;
     }
-
-    /* ---------- 工具栏 ---------- */
 
     .toolbar {
         padding: 6px;
@@ -2400,10 +2562,6 @@ code {
         font-size: 12px;
         border-radius: 8px;
         gap: 5px;
-    }
-
-    .tab-icon {
-        font-size: 12px;
     }
 
     .toolbar-right {
@@ -2433,8 +2591,6 @@ code {
     .toolbar-divider {
         display: none;
     }
-
-    /* ---------- 画廊头 ---------- */
 
     .gallery-head {
         flex-direction: row;
@@ -2480,8 +2636,6 @@ code {
         font-size: 10px;
     }
 
-    /* ---------- 画廊 ---------- */
-
     .gallery {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
@@ -2492,7 +2646,7 @@ code {
     }
 
     .image-card:hover {
-        transform: none;    /* 手机上无 hover，去掉位移避免触屏残留 */
+        transform: none;
         box-shadow: none;
     }
 
@@ -2507,6 +2661,11 @@ code {
     .image-meta {
         margin-top: 3px;
         font-size: 9px;
+    }
+
+    .small-tag {
+        padding: 1px 4px;
+        font-size: 8.5px;
     }
 
     .image-actions {
@@ -2535,8 +2694,6 @@ code {
         height: 18px;
     }
 
-    /* ---------- 上传弹窗：全屏适配 ---------- */
-
     .modal {
         padding: 0;
     }
@@ -2549,10 +2706,8 @@ code {
         max-height: 100dvh;
 
         padding: 14px;
-        padding-top:
-                calc(14px + env(safe-area-inset-top));
-        padding-bottom:
-                calc(14px + env(safe-area-inset-bottom));
+        padding-top: calc(14px + env(safe-area-inset-top));
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
 
         border-radius: 0;
         border: 0;
@@ -2573,7 +2728,6 @@ code {
         font-size: 19px;
     }
 
-    /* 移动端空间有限：隐藏说明文字 */
     .modal-head p {
         display: none;
     }
@@ -2584,8 +2738,6 @@ code {
         font-size: 20px;
         border-radius: 10px;
     }
-
-    /* ---------- Drop Zone ---------- */
 
     .upload-body {
         min-height: 120px;
@@ -2628,7 +2780,9 @@ code {
         font-size: 9.5px;
     }
 
-    /* ---------- 上传列表 ---------- */
+    .drop-limit-note {
+        font-size: 9.5px;
+    }
 
     .upload-meta {
         margin-top: 10px;
@@ -2677,8 +2831,6 @@ code {
         border-radius: 9px;
     }
 
-    /* ---------- 底部操作区 ---------- */
-
     .modal-foot {
         flex-direction: column;
         align-items: stretch;
@@ -2716,8 +2868,6 @@ code {
         font-size: 10.5px;
         margin-top: 8px;
     }
-
-    /* ---------- 预览 ---------- */
 
     .preview-card {
         padding: 8px;
@@ -2766,23 +2916,121 @@ code {
         font-size: 20px;
     }
 
-    /* ---------- Toast ---------- */
-
     .toast {
         bottom: 18px;
         padding: 9px 13px;
         font-size: 10.5px;
     }
 
-    /* ---------- Footer ---------- */
-
     .footer {
-        margin-top: 24px;
-        font-size: 9.5px;
+        margin-top: 30px;
+        font-size: 10px;
+        gap: 10px;
+    }
+
+    .footer-link {
+        padding: 4px 9px;
+        font-size: 10.5px;
+    }
+
+    .footer-link-icon {
+        width: 13px;
+        height: 13px;
+        font-size: 13px;
+    }
+
+    .mode-switch {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .mode-btn {
+        flex: 1;
+        min-height: 30px;
+        padding: 6px 8px;
+        font-size: 11.5px;
+    }
+
+    .download-original-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mode-switch--api .mode-btn {
+        min-height: 34px;
+        font-size: 12px;
+    }
+
+    .token-card {
+        padding: 20px;
+        border-radius: 20px;
+    }
+
+    .token-field-input {
+        padding: 13px 0;
+        font-size: 13.5px;
+    }
+
+    .token-actions .btn {
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    .upload-foot {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .token-trigger {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        order: 2;
+    }
+
+    .upload-foot .upload-start-btn {
+        width: 100%;
+        order: 1;
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    .whitelist-strip {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    .visitor-strip {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .visitor-left {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .visitor-token {
+        flex: 1;
+        max-width: none;
+        justify-content: space-between;
+    }
+
+    .visitor-right {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .visitor-dot {
+        display: none;
     }
 }
-@media (max-width: 430px) {
 
+@media (max-width: 430px) {
     .hero h1 {
         font-size: 22px;
     }
@@ -2791,7 +3039,6 @@ code {
         font-size: 11.5px;
     }
 
-    /* 小屏只保留前 3 个特性标签 */
     .hero-features span:nth-child(n + 4) {
         display: none;
     }
@@ -2821,81 +3068,215 @@ code {
     .quick-links .btn {
         flex: 1 1 100%;
     }
+
+    .footer-row--links {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .footer-separator {
+        display: none;
+    }
 }
-/* =========================
-   Dark Mode
-   ========================= */
+
+/* =========================================================
+   Dark Mode — 深空夜
+   ========================================================= */
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #17121a;
+        --bg: #0a0618;
 
-        --card:
-                rgba(35, 27, 40, .92);
+        --card: rgba(26, 18, 46, .92);
+        --card-strong: rgba(26, 18, 46, .98);
 
-        --card-strong:
-                rgba(35, 27, 40, .98);
+        --text: #ece7ff;
+        --muted: #8b82a8;
 
-        --text: #f3eaf4;
+        --line: rgba(167, 139, 250, .16);
+        --line-strong: rgba(167, 139, 250, .36);
 
-        --muted: #b6a8b9;
+        --accent: #a78bfa;
+        --accent-2: #c4b5fd;
 
-        --line:
-                rgba(227, 181, 226, .15);
-
-        --accent: #bd79a7;
-
-        --accent-2: #d89cbf;
-
-        --shadow:
-                0 26px 80px
-                rgba(0, 0, 0, .27);
+        --shadow: 0 26px 80px rgba(0, 0, 0, .5);
+        --shadow-hover: 0 32px 85px rgba(0, 0, 0, .6);
     }
 
     body {
+        /* 深色模式：星点更亮、更多（约 80 颗） */
         background:
-                radial-gradient(
-                        circle at 12% 8%,
-                        rgba(118, 78, 126, .28),
-                        transparent 28%
-                ),
-                radial-gradient(
-                        circle at 90% 90%,
-                        rgba(70, 62, 129, .24),
-                        transparent 29%
-                ),
+            /* ───── 光晕 ───── */
+                radial-gradient(circle at 12% 8%, rgba(118, 78, 200, .35), transparent 30%),
+                radial-gradient(circle at 90% 90%, rgba(70, 90, 180, .3), transparent 31%),
+                radial-gradient(circle at 50% 50%, rgba(76, 29, 149, .12), transparent 55%),
+
+                    /* ───── 亮星 · 紫色 ───── */
+                radial-gradient(circle 2.4px at 8% 14%, rgba(221, 214, 254, 1), transparent 100%),
+                radial-gradient(circle 2.8px at 22% 26%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.2px at 35% 8%, rgba(221, 214, 254, 0.95), transparent 100%),
+                radial-gradient(circle 2.6px at 48% 38%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.4px at 62% 18%, rgba(221, 214, 254, 1), transparent 100%),
+                radial-gradient(circle 2.8px at 74% 42%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.2px at 84% 22%, rgba(221, 214, 254, 0.95), transparent 100%),
+                radial-gradient(circle 2.6px at 92% 62%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.4px at 12% 58%, rgba(221, 214, 254, 1), transparent 100%),
+                radial-gradient(circle 2.8px at 28% 82%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.2px at 45% 92%, rgba(221, 214, 254, 0.95), transparent 100%),
+                radial-gradient(circle 2.6px at 58% 68%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.4px at 72% 88%, rgba(221, 214, 254, 1), transparent 100%),
+                radial-gradient(circle 2.8px at 88% 78%, rgba(196, 181, 253, 1), transparent 100%),
+                radial-gradient(circle 2.2px at 18% 48%, rgba(221, 214, 254, 0.95), transparent 100%),
+                radial-gradient(circle 2.6px at 96% 8%, rgba(196, 181, 253, 1), transparent 100%),
+
+                    /* ───── 亮星 · 金色 ───── */
+                radial-gradient(circle 2.6px at 6% 68%, rgba(252, 211, 77, 0.95), transparent 100%),
+                radial-gradient(circle 2.4px at 42% 22%, rgba(253, 224, 71, 0.95), transparent 100%),
+                radial-gradient(circle 2.6px at 68% 58%, rgba(252, 211, 77, 0.95), transparent 100%),
+                radial-gradient(circle 2.4px at 90% 36%, rgba(253, 224, 71, 0.95), transparent 100%),
+                radial-gradient(circle 2.2px at 30% 62%, rgba(252, 211, 77, 0.9), transparent 100%),
+                radial-gradient(circle 2.4px at 78% 8%, rgba(253, 224, 71, 0.95), transparent 100%),
+
+                    /* ───── 亮星 · 蓝色 ───── */
+                radial-gradient(circle 2.4px at 52% 82%, rgba(147, 197, 253, 1), transparent 100%),
+                radial-gradient(circle 2.6px at 82% 52%, rgba(191, 219, 254, 1), transparent 100%),
+
+                    /* ───── 细星 · 紫色主体 ───── */
+                radial-gradient(1.2px 1.2px at 4% 24%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 14% 6%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 20% 42%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 26% 18%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 32% 32%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 38% 52%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 44% 6%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 50% 28%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 56% 48%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 64% 8%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 68% 32%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 76% 62%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 80% 18%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 86% 48%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 94% 22%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 2% 44%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 10% 76%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 16% 92%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 24% 68%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 36% 84%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 42% 58%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 54% 92%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 60% 78%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 66% 42%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 74% 72%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 84% 82%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.4px 1.4px at 92% 92%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 98% 42%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 22% 8%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 46% 72%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 10% 25%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 33% 50%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 60% 30%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 74% 55%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 86% 15%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 20% 82%, rgba(196, 181, 253, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 44% 12%, rgba(221, 214, 254, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 94% 88%, rgba(196, 181, 253, 0.85), transparent 100%),
+
+                    /* ───── 细星 · 金色 ───── */
+                radial-gradient(1.2px 1.2px at 12% 34%, rgba(252, 211, 77, 0.85), transparent 100%),
+                radial-gradient(1px 1px at 30% 52%, rgba(253, 224, 71, 0.8), transparent 100%),
+                radial-gradient(1.2px 1.2px at 58% 8%, rgba(252, 211, 77, 0.85), transparent 100%),
+                radial-gradient(1px 1px at 76% 28%, rgba(253, 224, 71, 0.8), transparent 100%),
+                radial-gradient(1.2px 1.2px at 88% 62%, rgba(252, 211, 77, 0.85), transparent 100%),
+                radial-gradient(1px 1px at 34% 92%, rgba(253, 224, 71, 0.8), transparent 100%),
+                radial-gradient(1.2px 1.2px at 64% 88%, rgba(252, 211, 77, 0.85), transparent 100%),
+                radial-gradient(1px 1px at 4% 88%, rgba(253, 224, 71, 0.8), transparent 100%),
+                radial-gradient(1.2px 1.2px at 52% 22%, rgba(252, 211, 77, 0.8), transparent 100%),
+
+                    /* ───── 细星 · 蓝色 ───── */
+                radial-gradient(1.2px 1.2px at 26% 72%, rgba(147, 197, 253, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 40% 12%, rgba(191, 219, 254, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 72% 12%, rgba(147, 197, 253, 0.9), transparent 100%),
+                radial-gradient(1px 1px at 94% 72%, rgba(191, 219, 254, 0.85), transparent 100%),
+                radial-gradient(1.2px 1.2px at 50% 58%, rgba(147, 197, 253, 0.85), transparent 100%),
+                radial-gradient(1px 1px at 68% 78%, rgba(191, 219, 254, 0.85), transparent 100%),
+
+                    /* ───── 白色高光点 ───── */
+                radial-gradient(1px 1px at 16% 22%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 44% 42%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 70% 22%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 32% 58%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 82% 42%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 8% 52%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 60% 52%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 96% 88%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 24% 92%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1px 1px at 56% 12%, rgba(255, 255, 255, 1), transparent 100%),
+
                 var(--bg);
 
         background-attachment: fixed;
     }
 
-    .hero-badge {
+    body::before {
         background:
-                rgba(77, 48, 72, .45);
+            /* 闪烁亮紫 */
+                radial-gradient(2px 2px at 8% 14%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(2.2px 2.2px at 22% 26%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 35% 8%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 48% 38%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(2px 2px at 62% 18%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 74% 42%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 84% 22%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 92% 62%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(2px 2px at 12% 58%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 28% 82%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 45% 92%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 58% 68%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(2px 2px at 72% 88%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 88% 78%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 18% 48%, rgba(255, 255, 255, 0.95), transparent 100%),
+                radial-gradient(2.2px 2.2px at 96% 8%, rgba(255, 255, 255, 1), transparent 100%),
+
+                    /* 闪烁金星 */
+                radial-gradient(2px 2px at 6% 68%, rgba(253, 224, 71, 1), transparent 100%),
+                radial-gradient(2px 2px at 42% 22%, rgba(253, 224, 71, 1), transparent 100%),
+                radial-gradient(2px 2px at 68% 58%, rgba(253, 224, 71, 1), transparent 100%),
+                radial-gradient(2px 2px at 90% 36%, rgba(253, 224, 71, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 30% 62%, rgba(253, 224, 71, 0.95), transparent 100%),
+                radial-gradient(2px 2px at 78% 8%, rgba(253, 224, 71, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 54% 48%, rgba(253, 224, 71, 0.95), transparent 100%),
+
+                    /* 闪烁蓝星 */
+                radial-gradient(2px 2px at 52% 82%, rgba(191, 219, 254, 1), transparent 100%),
+                radial-gradient(1.8px 1.8px at 82% 52%, rgba(191, 219, 254, 1), transparent 100%),
+                radial-gradient(2px 2px at 26% 12%, rgba(191, 219, 254, 1), transparent 100%),
+
+                    /* 闪烁白点 */
+                radial-gradient(1.6px 1.6px at 16% 22%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.6px 1.6px at 44% 42%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.6px 1.6px at 70% 22%, rgba(255, 255, 255, 1), transparent 100%),
+                radial-gradient(1.6px 1.6px at 32% 58%, rgba(255, 255, 255, 1), transparent 100%);
+    }
+
+    .hero-badge {
+        background: rgba(76, 29, 149, .38);
     }
 
     .hero-features span {
-        background:
-                rgba(60, 45, 64, .68);
+        background: rgba(76, 29, 149, .5);
+        color: var(--accent);
     }
 
     .api-panel {
-        background:
-                linear-gradient(
-                        145deg,
-                        rgba(55, 39, 58, .94),
-                        rgba(43, 40, 66, .88)
-                );
+        background: linear-gradient(145deg, rgba(35, 24, 65, .94), rgba(24, 18, 45, .88));
     }
 
     .api-row {
-        background:
-                rgba(48, 37, 53, .84);
+        background: rgba(35, 24, 65, .85);
     }
 
     .tabs {
-        background:
-                rgba(49, 38, 54, .66);
+        background: rgba(35, 24, 65, .7);
     }
 
     .btn,
@@ -2903,1082 +3284,125 @@ code {
     .page-btn,
     .close-btn,
     .copy-btn {
-        background:
-                rgba(48, 37, 53, .8);
-
+        background: rgba(35, 24, 65, .82);
         color: var(--text);
     }
 
     .image-card {
-        background:
-                rgba(43, 34, 47, .86);
+        background: rgba(26, 18, 46, .88);
+    }
+
+    .thumb {
+        background: #1a1230;
     }
 
     .empty {
-        background:
-                rgba(42, 33, 46, .52);
+        background: rgba(26, 18, 46, .55);
     }
 
     .drop-zone {
-        background:
-                linear-gradient(
-                        145deg,
-                        rgba(55, 39, 58, .94),
-                        rgba(43, 40, 66, .9)
-                );
+        background: linear-gradient(145deg, rgba(35, 24, 65, .94), rgba(24, 18, 45, .9));
     }
 
     .drop-types span {
-        background:
-                rgba(189, 121, 167, .12);
+        background: rgba(167, 139, 250, .16);
+        color: var(--accent);
     }
 
     .file-row {
-        background:
-                rgba(50, 38, 55, .82);
+        background: rgba(35, 24, 65, .82);
     }
 
     .file-uploading {
-        background:
-                rgba(63, 48, 68, .94);
+        background: rgba(50, 35, 85, .95);
     }
 
     .file-failed {
-        background:
-                rgba(78, 45, 58, .82);
+        background: rgba(85, 35, 55, .82);
     }
 
     .file-progress {
-        background:
-                rgba(189, 121, 167, .16);
+        background: rgba(167, 139, 250, .18);
     }
 
     .token-wrap {
-        background:
-                rgba(49, 38, 53, .85);
+        background: rgba(35, 24, 65, .85);
     }
-}
-/* =========================
-   加速 / 原图 模式切换
-   ========================= */
-
-.mode-switch {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 2px;
-
-    padding: 3px;
-
-    border:
-            1px solid
-            rgba(191, 160, 194, 0.25);
-
-    border-radius: 10px;
-
-    background:
-            rgba(245, 237, 247, 0.65);
-}
-
-.mode-btn {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    min-height: 28px;
-
-    padding: 5px 10px;
-
-    border: 1px solid transparent;
-
-    border-radius: 7px;
-
-    background: transparent;
-
-    color: #96869a;
-
-    font-size: 11px;
-
-    white-space: nowrap;
-
-    cursor: pointer;
-
-    transition:
-            color 0.18s ease,
-            background 0.18s ease,
-            border-color 0.18s ease;
-}
-
-.mode-btn:hover {
-    color: #493c4c;
-}
-
-.mode-btn.active {
-    color: #fff;
-
-    background:
-            linear-gradient(
-                    135deg,
-                    #e4a7c9,
-                    #c97da9
-            );
-
-    box-shadow:
-            0 4px 12px
-            rgba(201, 125, 169, 0.22);
-}
-
-/* =========================
-   下载原图开关
-   ========================= */
-
-.download-original-toggle {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding: 5px 8px;
-
-    border:
-            1px solid
-            rgba(191, 160, 194, 0.25);
-
-    border-radius: 10px;
-
-    background:
-            rgba(255, 255, 255, 0.7);
-
-    color: #96869a;
-
-    font-size: 11px;
-
-    white-space: nowrap;
-
-    cursor: pointer;
-
-    user-select: none;
-
-    transition:
-            color 0.18s ease,
-            background 0.18s ease,
-            border-color 0.18s ease;
-}
-
-.download-original-toggle:hover {
-    color: #493c4c;
-}
-
-.download-original-toggle input {
-    width: 14px;
-    height: 14px;
-
-    margin: 0;
-
-    accent-color: #c97da9;
-
-    cursor: pointer;
-}
-
-.download-original-toggle input:checked+span {
-    color: #c97da9;
-
-    font-weight: 600;
-}
-
-/* =========================
-   角色控制：访客隐藏 admin-only
-   ========================= */
-
-body.is-guest .admin-only {
-    display: none !important;
-}
-
-/* =========================
-   Dark Mode
-   ========================= */
-
-@media (prefers-color-scheme: dark) {
-
-    .mode-switch {
-        border-color:
-                rgba(227, 181, 226, 0.15);
-
-        background:
-                rgba(49, 38, 54, 0.66);
-    }
-
-    .mode-btn {
-        color: #b6a8b9;
-    }
-
-    .mode-btn:hover {
-        color: #f3eaf4;
-    }
-
-    .mode-btn.active {
-        color: #fff;
-
-        background:
-                linear-gradient(
-                        135deg,
-                        #d89cbf,
-                        #bd79a7
-                );
-
-        box-shadow:
-                0 4px 12px
-                rgba(189, 121, 167, 0.32);
-    }
-
-    .download-original-toggle {
-        border-color:
-                rgba(227, 181, 226, 0.15);
-
-        background:
-                rgba(48, 37, 53, 0.8);
-
-        color: #b6a8b9;
-    }
-
-    .download-original-toggle:hover {
-        color: #f3eaf4;
-    }
-
-    .download-original-toggle input {
-        accent-color: #bd79a7;
-    }
-
-    .download-original-toggle input:checked+span {
-        color: #bd79a7;
-    }
-}
-
-/* =========================
-   移动端
-   ========================= */
-
-@media (max-width: 640px) {
-
-    .mode-switch {
-        width: 100%;
-
-        justify-content: space-between;
-    }
-
-    .mode-btn {
-        flex: 1;
-
-        min-height: 30px;
-
-        padding: 6px 8px;
-
-        font-size: 11.5px;
-    }
-
-    .download-original-toggle {
-        width: 100%;
-
-        justify-content: center;
-    }
-}
-
-/* =========================================================
-   API 卡片里的模式切换
-   ========================================================= */
-
-.mode-switch--api {
-    width: 100%;
-
-    margin-top: 10px;
-
-    display: flex;
-
-    justify-content: stretch;
-}
-
-.mode-switch--api .mode-btn {
-    flex: 1;
-
-    min-height: 32px;
-
-    padding: 6px 10px;
-
-    font-size: 11.5px;
-
-    border-radius: 9px;
-
-    gap: 5px;
-}
-
-.mode-icon {
-    font-size: 12px;
-
-    line-height: 1;
-}
-
-/* =========================================================
-   密钥弹窗
-   ========================================================= */
-
-.token-card {
-    width: min(440px, 100%);
-
-    max-height: none;
-
-    padding: 24px;
-
-    border-radius: 24px;
-
-    background: var(--card-strong);
-
-    display: flex;
-
-    flex-direction: column;
-
-    overflow: hidden;
-}
-
-.token-card-body {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 12px;
-
-    min-width: 0;
-}
-
-.token-field {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    padding: 0 12px;
-
-    border:
-            1px solid
-            rgba(191, 160, 194, 0.25);
-
-    border-radius: 12px;
-
-    background:
-            rgba(255, 255, 255, 0.8);
-
-    transition:
-            border-color 0.18s ease,
-            box-shadow 0.18s ease;
-}
-
-.token-field:focus-within {
-    border-color: #c97da9;
-
-    box-shadow:
-            0 0 0 3px
-            rgba(201, 125, 169, 0.15);
-}
-
-.token-field-icon {
-    font-size: 14px;
-
-    opacity: 0.7;
-
-    flex: 0 0 auto;
-}
-
-.token-field-input {
-    flex: 1;
-
-    min-width: 0;
-
-    padding: 12px 0;
-
-    border: 0;
-
-    outline: none;
-
-    background: transparent;
-
-    color: var(--text);
-
-    font-size: 13px;
-}
-
-.token-actions {
-    display: flex;
-
-    gap: 8px;
-
-    margin-top: 4px;
-}
-
-.token-actions .btn {
-    flex: 1;
-
-    min-height: 40px;
-
-    font-size: 12px;
-}
-
-/* =========================================================
-   上传弹窗底部（角色标签 + 开始上传）
-   ========================================================= */
-
-.upload-foot {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    flex-wrap: wrap;
-
-    margin-top: 15px;
-
-    flex: 0 0 auto;
-}
-
-.token-trigger {
-    flex: 1 1 auto;
-
-    min-width: 0;
-
-    justify-content: flex-start;
-
-    text-align: left;
-
-    padding: 8px 12px;
-
-    font-size: 11.5px;
-
-    color: var(--muted);
-
-    overflow: hidden;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-}
-
-.token-trigger:hover {
-    color: var(--text);
-}
-
-.token-trigger .btn-icon {
-    font-size: 13px;
-}
-
-.upload-foot .upload-start-btn {
-    flex: 0 0 auto;
-}
-
-/* =========================================================
-   Dark Mode
-   ========================================================= */
-
-@media (prefers-color-scheme: dark) {
 
     .token-card {
-        background:
-                rgba(35, 27, 40, 0.98);
+        background: rgba(26, 18, 46, .98);
     }
 
     .token-field {
-        background:
-                rgba(49, 38, 53, 0.85);
-
-        border-color:
-                rgba(227, 181, 226, 0.15);
+        background: rgba(35, 24, 65, .85);
+        border-color: rgba(167, 139, 250, .18);
     }
 
     .token-field:focus-within {
-        border-color: #bd79a7;
-
-        box-shadow:
-                0 0 0 3px
-                rgba(189, 121, 167, 0.22);
-    }
-}
-
-/* =========================================================
-   移动端
-   ========================================================= */
-
-@media (max-width: 640px) {
-
-    .mode-switch--api .mode-btn {
-        min-height: 34px;
-
-        font-size: 12px;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, .24);
     }
 
-    .token-card {
-        padding: 20px;
-
-        border-radius: 20px;
+    .visitor-strip,
+    .whitelist-strip {
+        border-color: rgba(167, 139, 250, .18);
+        background: linear-gradient(145deg, rgba(35, 24, 65, .92), rgba(24, 18, 45, .86));
     }
 
-    .token-field-input {
-        padding: 13px 0;
-
-        font-size: 13.5px;
-    }
-
-    .token-actions .btn {
-        min-height: 44px;
-
-        font-size: 13px;
-    }
-
-    .upload-foot {
-        flex-direction: column;
-
-        align-items: stretch;
-    }
-
-    .token-trigger {
-        width: 100%;
-
-        justify-content: center;
-
-        text-align: center;
-
-        order: 2;
-    }
-
-    .upload-foot .upload-start-btn {
-        width: 100%;
-
-        order: 1;
-
-        min-height: 44px;
-
-        font-size: 13px;
-    }
-}
-/* =========================================================
-   访客信息条（Hero 底部）
-   ========================================================= */
-
-.visitor-strip {
-    /* 跨 Hero 的两列 */
-    grid-column: 1 / -1;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    flex-wrap: wrap;
-
-    gap: 12px;
-
-    margin-top: 4px;
-
-    padding: 12px 14px;
-
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.16);
-
-    border-radius: 16px;
-
-    background:
-            linear-gradient(
-                    145deg,
-                    rgba(255, 245, 251, 0.85),
-                    rgba(246, 242, 255, 0.75)
-            );
-}
-
-.visitor-left {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    min-width: 0;
-
-    flex-wrap: wrap;
-}
-
-.visitor-icon {
-    font-size: 15px;
-
-    line-height: 1;
-}
-
-.visitor-title {
-    font-size: 12.5px;
-
-    font-weight: 700;
-
-    color: #493c4c;
-}
-
-.visitor-token {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding: 3px 4px 3px 10px;
-
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.2);
-
-    border-radius: 10px;
-
-    background:
-            rgba(255, 255, 255, 0.7);
-}
-
-.visitor-token code {
-    font-size: 12px;
-
-    color: #c97da9;
-
-    font-weight: 700;
-
-    letter-spacing: 0.3px;
-}
-
-.visitor-right {
-    display: flex;
-
-    align-items: center;
-
-    flex-wrap: wrap;
-
-    gap: 6px;
-
-    color: #96869a;
-
-    font-size: 11px;
-}
-
-.visitor-quota {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 5px;
-}
-
-.quota-label {
-    padding: 2px 6px;
-
-    border-radius: 5px;
-
-    background:
-            rgba(201, 125, 169, 0.12);
-
-    color: #c97da9;
-
-    font-size: 9.5px;
-
-    font-weight: 800;
-
-    letter-spacing: 0.3px;
-}
-
-.quota-value {
-    font-variant-numeric: tabular-nums;
-}
-
-.quota-value strong {
-    color: #493c4c;
-
-    font-weight: 700;
-}
-
-.visitor-dot {
-    opacity: 0.45;
-}
-
-/* =========================================================
-   密钥弹窗里的访客提示
-   ========================================================= */
-
-.token-guest-hint {
-    margin-top: 14px;
-
-    padding: 12px 14px;
-
-    border:
-            1px dashed
-            rgba(201, 125, 169, 0.28);
-
-    border-radius: 12px;
-
-    background:
-            rgba(255, 245, 251, 0.6);
-}
-
-.token-guest-title {
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    margin-bottom: 8px;
-
-    color: #c97da9;
-
-    font-size: 12px;
-
-    font-weight: 700;
-}
-
-.token-guest-row {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    margin-bottom: 8px;
-}
-
-.token-guest-row code {
-    flex: 1;
-
-    padding: 8px 10px;
-
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.2);
-
-    border-radius: 9px;
-
-    background:
-            rgba(255, 255, 255, 0.7);
-
-    color: #c97da9;
-
-    font-size: 12.5px;
-
-    font-weight: 700;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-}
-
-.token-guest-desc {
-    color: #96869a;
-
-    font-size: 10.5px;
-
-    line-height: 1.55;
-
-    font-variant-numeric: tabular-nums;
-}
-
-/* 小尺寸复制按钮 */
-.copy-btn.small {
-    padding: 4px 8px;
-
-    font-size: 10.5px;
-
-    border-radius: 8px;
-
-    flex: 0 0 auto;
-}
-
-/* =========================================================
-   Dark Mode
-   ========================================================= */
-
-@media (prefers-color-scheme: dark) {
-
-    .visitor-strip {
-        border-color:
-                rgba(227, 181, 226, 0.15);
-
-        background:
-                linear-gradient(
-                        145deg,
-                        rgba(55, 39, 58, 0.92),
-                        rgba(43, 40, 66, 0.86)
-                );
-    }
-
-    .visitor-title {
-        color: #f3eaf4;
-    }
-
-    .visitor-token {
-        border-color:
-                rgba(227, 181, 226, 0.15);
-
-        background:
-                rgba(48, 37, 53, 0.8);
-    }
-
-    .visitor-token code {
-        color: #d89cbf;
+    .visitor-token,
+    .whitelist-btn {
+        border-color: rgba(167, 139, 250, .2);
+        background: rgba(35, 24, 65, .85);
+        color: var(--accent);
     }
 
     .quota-label {
-        background:
-                rgba(189, 121, 167, 0.16);
-
-        color: #d89cbf;
+        background: rgba(167, 139, 250, .18);
+        color: var(--accent);
     }
-
-    .quota-value strong {
-        color: #f3eaf4;
-    }
-
-    .visitor-right {
-        color: #b6a8b9;
-    }
-
-    .token-guest-hint {
-        border-color:
-                rgba(227, 181, 226, 0.22);
-
-        background:
-                rgba(60, 45, 64, 0.5);
-    }
-
-    .token-guest-title {
-        color: #d89cbf;
-    }
-
-    .token-guest-row code {
-        border-color:
-                rgba(227, 181, 226, 0.15);
-
-        background:
-                rgba(48, 37, 53, 0.8);
-
-        color: #d89cbf;
-    }
-
-    .token-guest-desc {
-        color: #b6a8b9;
-    }
-}
-
-/* =========================================================
-   移动端
-   ========================================================= */
-
-@media (max-width: 760px) {
-
-    .visitor-strip {
-        flex-direction: column;
-
-        align-items: stretch;
-
-        gap: 10px;
-
-        padding: 12px;
-    }
-
-    .visitor-left {
-        justify-content: space-between;
-
-        width: 100%;
-    }
-
-    .visitor-token {
-        flex: 1;
-
-        max-width: none;
-
-        justify-content: space-between;
-    }
-
-    .visitor-right {
-        flex-direction: column;
-
-        align-items: flex-start;
-
-        gap: 4px;
-    }
-
-    .visitor-dot {
-        display: none;
-    }
-
-    .token-guest-hint {
-        padding: 10px 12px;
-    }
-}
-/* =========================
-   密钥提示样式
-   ========================= */
-
-.result.is-error {
-    color: #b94c71;
-    font-weight: 600;
-}
-
-.result.is-success {
-    color: #5c9874;
-    font-weight: 600;
-}
-
-@media (prefers-color-scheme: dark) {
 
     .result.is-error {
-        color: #e88ba8;
+        color: #fda4af;
     }
 
     .result.is-success {
-        color: #8fd3ad;
-    }
-}
-/* =========================================================
-   白名单激活提示条
-   ========================================================= */
-
-.whitelist-strip {
-    grid-column: 1 / -1;
-
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-
-    margin-top: 4px;
-    padding: 12px 14px;
-
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.2);
-
-    border-radius: 16px;
-
-    background:
-            linear-gradient(
-                    145deg,
-                    rgba(255, 236, 246, 0.85),
-                    rgba(240, 236, 255, 0.75)
-            );
-
-    color: #493c4c;
-    font-size: 12px;
-    line-height: 1.6;
-}
-
-.whitelist-icon {
-    font-size: 15px;
-    line-height: 1;
-    flex: 0 0 auto;
-}
-
-.whitelist-text {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.whitelist-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 4px 10px;
-    margin: 0 2px;
-
-    border:
-            1px solid
-            rgba(201, 125, 169, 0.4);
-
-    border-radius: 8px;
-
-    background:
-            rgba(255, 255, 255, 0.7);
-
-    color: #c97da9;
-    font-size: 11.5px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-            background 0.18s ease,
-            border-color 0.18s ease;
-}
-
-.whitelist-btn:hover:not(:disabled) {
-    background:
-            rgba(201, 125, 169, 0.14);
-    border-color: #c97da9;
-}
-
-.whitelist-btn:disabled {
-    opacity: 0.6;
-    cursor: wait;
-}
-
-/* =========================================================
-   Dark Mode
-   ========================================================= */
-
-@media (prefers-color-scheme: dark) {
-
-    .whitelist-strip {
-        border-color:
-                rgba(227, 181, 226, 0.22);
-
-        background:
-                linear-gradient(
-                        145deg,
-                        rgba(55, 39, 58, 0.92),
-                        rgba(43, 40, 66, 0.86)
-                );
-
-        color: #f3eaf4;
+        color: #6ee7b7;
     }
 
-    .whitelist-btn {
-        border-color:
-                rgba(189, 121, 167, 0.42);
-
-        background:
-                rgba(48, 37, 53, 0.8);
-
-        color: #d89cbf;
+    .mode-switch {
+        border-color: rgba(167, 139, 250, .18);
+        background: rgba(35, 24, 65, .7);
     }
 
-    .whitelist-btn:hover:not(:disabled) {
-        background:
-                rgba(189, 121, 167, 0.18);
-        border-color: #bd79a7;
+    .mode-btn {
+        color: var(--muted);
     }
-}
 
-@media (max-width: 640px) {
-    .whitelist-strip {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 12px;
+    .mode-btn:hover {
+        color: var(--text);
     }
-}
-/* =========================================================
-   修复 hidden 属性被 display 覆盖的问题
-   ========================================================= */
 
-.whitelist-strip[hidden],
-.visitor-strip[hidden] {
-    display: none !important;
-}
-/* API URL 悬停时显示完整地址 */
-.api-row code[title] {
-    cursor: help;
+    .download-original-toggle {
+        border-color: rgba(167, 139, 250, .18);
+        background: rgba(35, 24, 65, .82);
+        color: var(--muted);
+    }
+
+    .download-original-toggle:hover {
+        color: var(--text);
+    }
+
+    .download-original-toggle input {
+        accent-color: var(--accent);
+    }
+
+    .download-original-toggle input:checked + span {
+        color: var(--accent);
+    }
+
+    .footer-link:hover {
+        color: var(--accent);
+        background: rgba(167, 139, 250, .14);
+        border-color: rgba(167, 139, 250, .32);
+    }
 }
