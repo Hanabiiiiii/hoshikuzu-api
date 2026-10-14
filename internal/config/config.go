@@ -19,6 +19,12 @@ type Config struct {
 	Limits      LimitsConfig      `yaml:"limits"`
 	Upload      UploadConfig      `yaml:"upload"`
 	Mobile      MobileConfig      `yaml:"mobile"`
+	Thumbnails  ThumbnailConfig   `yaml:"thumbnails"`
+}
+
+type ThumbnailConfig struct {
+	WebP        bool `yaml:"webp"`
+	WebPQuality int  `yaml:"webp_quality"`
 }
 
 type ServerConfig struct {
@@ -213,6 +219,10 @@ func defaultConfig() Config {
 		},
 		Mobile: MobileConfig{
 			WidthThreshold: 768,
+		},
+		Thumbnails: ThumbnailConfig{
+			WebP:        true,
+			WebPQuality: 82,
 		},
 	}
 }

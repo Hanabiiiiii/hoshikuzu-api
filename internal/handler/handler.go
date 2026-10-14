@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -43,30 +45,61 @@ func New(
 	}
 }
 
+type imageDTO struct {
+	ID           int64     `json:"id"`
+	UUID         string    `json:"uuid"`
+	OriginalName string    `json:"original_name"`
+	Filename     string    `json:"filename"`
+	Type         string    `json:"type"`
+	MIME         string    `json:"mime"`
+	Extension    string    `json:"extension"`
+	Size         int64     `json:"size"`
+	Width        int       `json:"width"`
+	Height       int       `json:"height"`
+	CreatedAt    time.Time `json:"created_at"`
+	URL          string    `json:"url"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+	GridURL      string    `json:"grid_url"`
+	DownloadURL  string    `json:"download_url"`
+	HasThumbnail bool      `json:"has_thumbnail"`
+	HasGrid      bool      `json:"has_grid"`
+	WebP         bool      `json:"webp"`
+}
+
+// 静态资源只做协商缓存（no-cache = 每次校验），
+// 内容变了就重新下载，没变就走 304，本地改样式不用清缓存。
+const assetCacheControl = "public, no-cache"
+
+// noStore 用在所有和配额 / 随机性 / 权限相关的接口上。
+// 这些响应一旦被 CDN 或反向代理缓存，就会出现「所有人拿到同一张图」
+// 或者「配额被缓存绕过」的问题，所以不依赖运维记得配 bypass 规则。
+func noStore(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+}
+
 func WebIndex(c *gin.Context) {
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Cache-Control", assetCacheControl)
 	c.File("web/index.html")
 }
 
 func WebJS(c *gin.Context) {
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Cache-Control", assetCacheControl)
 	c.File("web/app.js")
 }
 
 func WebCSS(c *gin.Context) {
-	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Cache-Control", assetCacheControl)
 	c.File("web/style.css")
 }
 
 func Health(c *gin.Context) {
+	noStore(c)
 	c.JSON(http.StatusOK, gin.H{"success": true, "status": "ok"})
 }
 
-/* =========================================================
-   PublicConfig
-   ========================================================= */
-
 func (h *Handler) PublicConfig(c *gin.Context) {
+	noStore(c)
+
 	whitelistActive := !h.checker.IsDisabled()
 
 	inWhitelist := true
@@ -88,11 +121,9 @@ func (h *Handler) PublicConfig(c *gin.Context) {
 	})
 }
 
-/* =========================================================
-   WhoAmI
-   ========================================================= */
-
 func (h *Handler) WhoAmI(c *gin.Context) {
+	noStore(c)
+
 	role := middleware.GetRole(c)
 	if role == "" {
 		role = middleware.RoleGuest
@@ -112,115 +143,94 @@ func (h *Handler) WhoAmI(c *gin.Context) {
 	})
 }
 
-/* =========================================================
-   临时密钥生成
-   ========================================================= */
-
-/*
- * GenerateTempToken 生成一个 6 位数字临时管理员密钥。
- *
- * 不做任何鉴权，任何地方都能调用。
- *
- * 关键：密钥只输出到服务器日志，不返回给前端。
- *
- *   - 想用密钥的人 → 必须能看服务器日志
- *   - 能看日志的人 → 就是服务器管理员
- *   - 白名单外的人 → 点按钮毫无收益，因为拿不到密钥
- *
- * 安全防护：
- *   - 连续 3 次校验失败 → 全局锁定 1 小时，期间无法生成新密钥
- *   - 锁定状态在 TempTokenStore 里，跨请求生效
- */
+// 临时密钥只写服务器日志，不返回给前端：能看日志的人才拿得到。
 func (h *Handler) GenerateTempToken(c *gin.Context) {
+	noStore(c)
+
 	token, ttl, err := h.tempStore.Generate()
 	if err != nil {
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		c.JSON(http.StatusTooManyRequests, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 
-	clientIP := clientIP(c)
-
 	log.Printf(
 		"[TEMP-TOKEN] 生成临时管理员密钥: %s （有效期 %s，请求来源 %s）",
-		token, ttl, clientIP,
+		token, ttl, clientIP(c),
 	)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "临时密钥已生成。请到服务器日志查看（关键词 [TEMP-TOKEN]）。",
-		"data": gin.H{
-			"expires_in": int(ttl.Seconds()),
-		},
+		"data":    gin.H{"expires_in": int(ttl.Seconds())},
 	})
 }
 
-/* =========================================================
-   Random
-   ========================================================= */
-
 func (h *Handler) Random(c *gin.Context) {
-	typ := resolveType(c, h.cfg.Mobile.WidthThreshold)
+	noStore(c)
 
-	mode := strings.ToLower(strings.TrimSpace(c.Query("mode")))
-	useOriginal := mode == "original"
+	// 整个请求只解析一次 query string：c.Query() 每次都重新解析 RawQuery。
+	query := c.Request.URL.Query()
+
+	typ := resolveType(c, query, h.cfg.Mobile.WidthThreshold)
+	useOriginal := strings.EqualFold(strings.TrimSpace(query.Get("mode")), "original")
 
 	if useOriginal && !h.isAdmin(c) {
 		limit := h.cfg.Limits.Guest.APIOriginalPerDay
 		if limit > 0 {
-			key := "api-original:" + clientIP(c)
-			if allowed, _ := h.limiter.Allow(key, limit); !allowed {
+			if allowed, _ := h.limiter.Allow("api-original:"+clientIP(c), limit); !allowed {
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"success": false,
-					"message": fmt.Sprintf(
-						"访客每日原图调用配额已用完（%d 张），请明日再试",
-						limit,
-					),
+					"message": fmt.Sprintf("访客每日原图调用配额已用完（%d 张），请明日再试", limit),
 				})
 				return
 			}
 		}
 	}
 
-	item, err := h.service.Random(typ)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"success": false,
-				"message": "当前分类没有图片",
-				"type":    typ,
-			})
+	preferWebP := prefersWebP(c)
+
+	if query.Get("format") == "json" {
+		item, err := h.service.Random(typ)
+		if err != nil {
+			randomError(c, typ, err)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
-		return
-	}
 
-	if c.Query("format") == "json" {
-		data := h.serialize(item, false)
+		data := h.serialize(item, false, preferWebP)
 		if useOriginal {
-			data["url"] = h.service.PublicURL(item)
+			data.URL = h.service.PublicURL(item)
 		} else {
-			data["url"] = h.service.ThumbnailURL(item)
+			data.URL = h.service.ThumbnailURL(item, preferWebP)
 		}
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": data})
 		return
 	}
 
-	if useOriginal {
-		c.Redirect(http.StatusTemporaryRedirect, h.service.PublicURL(item))
+	// 跳转分支走内存目录，正常情况一条数据库查询都不发
+	target, err := h.service.RandomURL(typ, preferWebP, useOriginal)
+	if err != nil {
+		randomError(c, typ, err)
 		return
 	}
-	c.Redirect(http.StatusTemporaryRedirect, h.service.ThumbnailURL(item))
+
+	c.Redirect(http.StatusTemporaryRedirect, target)
 }
 
-/* =========================================================
-   List
-   ========================================================= */
+func randomError(c *gin.Context, typ model.ImageType, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "当前分类没有图片",
+			"type":    typ,
+		})
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+}
 
 func (h *Handler) List(c *gin.Context) {
+	noStore(c)
+
 	typ := normalizeType(c.DefaultQuery("type", "desktop"))
 	page := positiveInt(c.Query("page"), 1)
 	size := positiveInt(c.Query("size"), 30)
@@ -231,9 +241,11 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	result := make([]gin.H, 0, len(items))
+	preferWebP := prefersWebP(c)
+
+	result := make([]imageDTO, 0, len(items))
 	for i := range items {
-		result = append(result, h.serialize(&items[i], false))
+		result = append(result, h.serialize(&items[i], false, preferWebP))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -247,17 +259,12 @@ func (h *Handler) List(c *gin.Context) {
 	})
 }
 
-/* =========================================================
-   Upload
-   ========================================================= */
-
 func (h *Handler) Upload(c *gin.Context) {
+	noStore(c)
+
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "获取文件失败: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "获取文件失败: " + err.Error()})
 		return
 	}
 
@@ -270,11 +277,13 @@ func (h *Handler) Upload(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "上传成功",
-		"data":    h.serialize(item, false),
+		"data":    h.serialize(item, false, false),
 	})
 }
 
 func (h *Handler) UploadBatch(c *gin.Context) {
+	noStore(c)
+
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的 multipart 请求: " + err.Error()})
@@ -287,9 +296,9 @@ func (h *Handler) UploadBatch(c *gin.Context) {
 	}
 
 	items, failed := h.service.UploadBatch(files)
-	uploaded := make([]gin.H, 0, len(items))
+	uploaded := make([]imageDTO, 0, len(items))
 	for i := range items {
-		uploaded = append(uploaded, h.serialize(&items[i], false))
+		uploaded = append(uploaded, h.serialize(&items[i], false, false))
 	}
 
 	status := http.StatusOK
@@ -310,11 +319,9 @@ func (h *Handler) UploadBatch(c *gin.Context) {
 	})
 }
 
-/* =========================================================
-   Delete
-   ========================================================= */
-
 func (h *Handler) Delete(c *gin.Context) {
+	noStore(c)
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的 ID"})
@@ -334,6 +341,8 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 func (h *Handler) DeleteBatch(c *gin.Context) {
+	noStore(c)
+
 	var req struct {
 		IDs []int64 `json:"ids"`
 	}
@@ -360,29 +369,14 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 	})
 }
 
-/* =========================================================
-   Download
-   ========================================================= */
-
-/*
- * Download 是压缩图 / 原图的配额通道。
- *
- * 计费规则：
- *
- *   请求 mode=original
- *     → 原图配额，返回原图
- *
- *   请求 mode=thumb
- *     → 有缩略图：thumb 配额，返回缩略图
- *     → 无缩略图 + 小图（Size ≤ thumbSkipSize）：
- *         thumb 配额，返回原图（小文件不占原图配额）
- *     → 无缩略图 + 大图（缩略图生成失败，罕见）：
- *         original 配额，返回原图
- *
- * 配额 key 中的 IP 来自 GlobalClientIP，且只在可信代理
- * 来源时解析转发头，防止通过伪造 XFF 绕过配额。
- */
+// Download 是压缩图 / 原图的配额通道：
+//   - mode=original            → 原图配额
+//   - mode=thumb 有缩略图      → 压缩图配额
+//   - mode=thumb 无缩略图小图  → 压缩图配额，返回原图
+//   - mode=thumb 无缩略图大图  → 原图配额
 func (h *Handler) Download(c *gin.Context) {
+	noStore(c)
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的 ID"})
@@ -395,16 +389,11 @@ func (h *Handler) Download(c *gin.Context) {
 		return
 	}
 
-	mode := strings.ToLower(strings.TrimSpace(c.Query("mode")))
-	useOriginal := mode == "original"
+	useOriginal := strings.EqualFold(strings.TrimSpace(c.Query("mode")), "original")
 
 	hasThumb := h.service.HasThumbnail(item)
 	isSmall := h.service.IsSmallImage(item)
-
-	countAsOriginal := useOriginal
-	if !useOriginal && !hasThumb && !isSmall {
-		countAsOriginal = true
-	}
+	countAsOriginal := useOriginal || (!hasThumb && !isSmall)
 
 	if !h.isAdmin(c) {
 		limit := h.cfg.Limits.Guest.DownloadThumbPerDay
@@ -419,24 +408,14 @@ func (h *Handler) Download(c *gin.Context) {
 			if allowed, _ := h.limiter.Allow(key, limit); !allowed {
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"success": false,
-					"message": fmt.Sprintf(
-						"访客每日%s下载配额已用完（%d 张），请明日再试",
-						label, limit,
-					),
+					"message": fmt.Sprintf("访客每日%s下载配额已用完（%d 张），请明日再试", label, limit),
 				})
 				return
 			}
 		}
 	}
 
-	if useOriginal {
-		c.Header("Content-Disposition", `attachment; filename="`+safeFilename(item.OriginalName)+`"`)
-		c.Header("Content-Type", item.MIME)
-		c.File(h.service.FilePath(item))
-		return
-	}
-
-	if !hasThumb {
+	if useOriginal || !hasThumb {
 		c.Header("Content-Disposition", `attachment; filename="`+safeFilename(item.OriginalName)+`"`)
 		c.Header("Content-Type", item.MIME)
 		c.File(h.service.FilePath(item))
@@ -448,12 +427,14 @@ func (h *Handler) Download(c *gin.Context) {
 		baseName = "image"
 	}
 
-	c.Header("Content-Disposition", `attachment; filename="`+baseName+".jpg"+`"`)
+	c.Header("Content-Disposition", `attachment; filename="`+baseName+`.jpg"`)
 	c.Header("Content-Type", "image/jpeg")
 	c.File(h.service.ThumbnailPath(item))
 }
 
 func (h *Handler) DownloadBatch(c *gin.Context) {
+	noStore(c)
+
 	var req struct {
 		IDs  []int64 `json:"ids"`
 		Mode string  `json:"mode"`
@@ -462,7 +443,6 @@ func (h *Handler) DownloadBatch(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的 JSON: " + err.Error()})
 		return
 	}
-
 	if len(req.IDs) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "没有提供图片 ID"})
 		return
@@ -470,65 +450,26 @@ func (h *Handler) DownloadBatch(c *gin.Context) {
 
 	useOriginal := strings.EqualFold(strings.TrimSpace(req.Mode), "original")
 
-	if !h.isAdmin(c) {
-		if useOriginal {
-			limit := h.cfg.Limits.Guest.DownloadOriginalPerDay
-			key := "download-original:" + clientIP(c)
-			if limit > 0 {
-				if allowed, _ := h.limiter.AllowN(key, limit, len(req.IDs)); !allowed {
-					c.JSON(http.StatusTooManyRequests, gin.H{
-						"success": false,
-						"message": fmt.Sprintf(
-							"访客每日原图下载配额为 %d 张，本次需要 %d 张，无法完成",
-							limit, len(req.IDs),
-						),
-					})
-					return
-				}
-			}
-		} else {
-			thumbCount, originalCount := h.countBatchDownloadMix(req.IDs)
-
-			thumbLimit := h.cfg.Limits.Guest.DownloadThumbPerDay
-			originalLimit := h.cfg.Limits.Guest.DownloadOriginalPerDay
-
-			if thumbCount > 0 && thumbLimit > 0 {
-				key := "download-thumb:" + clientIP(c)
-				if h.limiter.Remaining(key, thumbLimit) < thumbCount {
-					c.JSON(http.StatusTooManyRequests, gin.H{
-						"success": false,
-						"message": fmt.Sprintf(
-							"访客每日压缩图下载配额为 %d 张，本次需要 %d 张，无法完成",
-							thumbLimit, thumbCount,
-						),
-					})
-					return
-				}
-			}
-			if originalCount > 0 && originalLimit > 0 {
-				key := "download-original:" + clientIP(c)
-				if h.limiter.Remaining(key, originalLimit) < originalCount {
-					c.JSON(http.StatusTooManyRequests, gin.H{
-						"success": false,
-						"message": fmt.Sprintf(
-							"访客每日原图下载配额为 %d 张，本次需要 %d 张，无法完成",
-							originalLimit, originalCount,
-						),
-					})
-					return
-				}
-			}
-
-			if thumbCount > 0 && thumbLimit > 0 {
-				h.limiter.AllowN("download-thumb:"+clientIP(c), thumbLimit, thumbCount)
-			}
-			if originalCount > 0 && originalLimit > 0 {
-				h.limiter.AllowN("download-original:"+clientIP(c), originalLimit, originalCount)
-			}
-		}
+	found, err := h.service.FindByIDs(req.IDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	if len(found) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "没有找到可下载的图片"})
+		return
 	}
 
-	path, err := h.service.CreateZip(req.IDs, useOriginal)
+	items := make([]*model.Image, 0, len(found))
+	for _, item := range found {
+		items = append(items, item)
+	}
+
+	if !h.isAdmin(c) && !h.consumeDownloadQuota(c, items, useOriginal) {
+		return
+	}
+
+	path, err := h.service.CreateZip(items, useOriginal)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
@@ -538,44 +479,44 @@ func (h *Handler) DownloadBatch(c *gin.Context) {
 	c.FileAttachment(path, filepath.Base(path))
 }
 
-/*
- * countBatchDownloadMix 统计一批 ID 在 mode=thumb 下各走哪种配额。
- *
- * 规则（与单张下载保持一致）：
- *   - 有缩略图           → thumb 配额
- *   - 无缩略图 + 小图     → thumb 配额
- *   - 无缩略图 + 大图     → original 配额
- */
-func (h *Handler) countBatchDownloadMix(ids []int64) (thumbCount, originalCount int) {
-	seen := make(map[int64]struct{}, len(ids))
-	for _, id := range ids {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
+// 先按批次算出要消耗的两种配额，确认都够再一次性扣掉，避免扣一半失败。
+func (h *Handler) consumeDownloadQuota(c *gin.Context, items []*model.Image, useOriginal bool) bool {
+	thumbCount, originalCount := h.service.CountDownloadMix(items, useOriginal)
 
-		item, err := h.service.FindByID(id)
-		if err != nil {
-			continue
-		}
+	thumbLimit := h.cfg.Limits.Guest.DownloadThumbPerDay
+	originalLimit := h.cfg.Limits.Guest.DownloadOriginalPerDay
 
-		if h.service.HasThumbnail(item) || h.service.IsSmallImage(item) {
-			thumbCount++
-		} else {
-			originalCount++
-		}
+	ip := clientIP(c)
+	thumbKey := "download-thumb:" + ip
+	originalKey := "download-original:" + ip
+
+	if thumbCount > 0 && thumbLimit > 0 && h.limiter.Remaining(thumbKey, thumbLimit) < thumbCount {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("访客每日压缩图下载配额为 %d 张，本次需要 %d 张，无法完成", thumbLimit, thumbCount),
+		})
+		return false
 	}
-	return
-}
+	if originalCount > 0 && originalLimit > 0 && h.limiter.Remaining(originalKey, originalLimit) < originalCount {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("访客每日原图下载配额为 %d 张，本次需要 %d 张，无法完成", originalLimit, originalCount),
+		})
+		return false
+	}
 
-/* =========================================================
-   ServeImage
-   ========================================================= */
+	if thumbCount > 0 && thumbLimit > 0 {
+		h.limiter.AllowN(thumbKey, thumbLimit, thumbCount)
+	}
+	if originalCount > 0 && originalLimit > 0 {
+		h.limiter.AllowN(originalKey, originalLimit, originalCount)
+	}
+	return true
+}
 
 func (h *Handler) ServeImage(c *gin.Context) {
 	typ := normalizeType(c.Param("type"))
-	rawPath := strings.TrimPrefix(c.Param("path"), "/")
-	rawPath = filepath.ToSlash(rawPath)
+	rawPath := filepath.ToSlash(strings.TrimPrefix(c.Param("path"), "/"))
 
 	signedPath := fmt.Sprintf("/images/%s/%s", typ, rawPath)
 
@@ -589,16 +530,7 @@ func (h *Handler) ServeImage(c *gin.Context) {
 		return
 	}
 
-	var isThumb bool
-	var filename string
-
-	if strings.HasPrefix(rawPath, "thumb/") {
-		isThumb = true
-		filename = filepath.Base(strings.TrimPrefix(rawPath, "thumb/"))
-	} else {
-		filename = filepath.Base(rawPath)
-	}
-
+	filename := filepath.Base(rawPath)
 	if filename == "" || filename == "." || filename == ".." {
 		c.Status(http.StatusNotFound)
 		return
@@ -611,54 +543,61 @@ func (h *Handler) ServeImage(c *gin.Context) {
 		return
 	}
 
-	var path string
-	if isThumb {
+	path := h.service.FilePathFromParts(typ, filename)
+	if strings.HasPrefix(rawPath, "thumb/") {
 		path = h.service.ThumbFilePathFromParts(typ, filename)
-	} else {
-		path = h.service.FilePathFromParts(typ, filename)
 	}
 
-	if _, err := os.Stat(path); err != nil {
+	file, err := os.Open(path)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil || info.IsDir() {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=3600")
+	c.Header("Cache-Control", "public, max-age=3600, immutable")
 	c.Header("Content-Type", mime)
-	c.File(path)
+	http.ServeContent(c.Writer, c.Request, filename, info.ModTime(), file)
 }
 
-/* =========================================================
-   内部工具
-   ========================================================= */
+func (h *Handler) serialize(item *model.Image, includeOriginalURL, preferWebP bool) imageDTO {
+	hasThumb := h.service.HasThumbnail(item)
+	hasGrid := h.service.HasGridThumbnail(item)
 
-func (h *Handler) serialize(item *model.Image, includeOriginalURL bool) gin.H {
-	thumbURL := h.service.ThumbnailURL(item)
 	downloadURL := h.service.DownloadURL(item)
 
-	data := gin.H{
-		"id":            item.ID,
-		"uuid":          item.UUID,
-		"original_name": item.OriginalName,
-		"filename":      item.Filename,
-		"type":          item.Type,
-		"mime":          item.MIME,
-		"extension":     item.Extension,
-		"size":          item.Size,
-		"width":         item.Width,
-		"height":        item.Height,
-		"created_at":    item.CreatedAt,
-		"thumbnail_url": thumbURL,
-		"download_url":  downloadURL,
-		"url":           downloadURL,
-		"has_thumbnail": h.service.HasThumbnail(item),
+	dto := imageDTO{
+		ID:           item.ID,
+		UUID:         item.UUID,
+		OriginalName: item.OriginalName,
+		Filename:     item.Filename,
+		Type:         string(item.Type),
+		MIME:         item.MIME,
+		Extension:    item.Extension,
+		Size:         item.Size,
+		Width:        item.Width,
+		Height:       item.Height,
+		CreatedAt:    item.CreatedAt,
+		URL:          downloadURL,
+		ThumbnailURL: h.service.ThumbnailURL(item, preferWebP),
+		GridURL:      h.service.GridURL(item, preferWebP),
+		DownloadURL:  downloadURL,
+		HasThumbnail: hasThumb,
+		HasGrid:      hasGrid,
+		WebP:         preferWebP,
 	}
 
 	if includeOriginalURL {
-		data["url"] = h.service.PublicURL(item)
+		dto.URL = h.service.PublicURL(item)
 	}
 
-	return data
+	return dto
 }
 
 func (h *Handler) isAdmin(c *gin.Context) bool {
@@ -679,8 +618,8 @@ func mimeFromExtension(ext string) string {
 	return ""
 }
 
-func resolveType(c *gin.Context, mobileWidth int) model.ImageType {
-	requested := strings.ToLower(strings.TrimSpace(c.Query("type")))
+func resolveType(c *gin.Context, query url.Values, mobileWidth int) model.ImageType {
+	requested := strings.ToLower(strings.TrimSpace(query.Get("type")))
 	if requested == "desktop" {
 		return model.Desktop
 	}
@@ -688,7 +627,7 @@ func resolveType(c *gin.Context, mobileWidth int) model.ImageType {
 		return model.Mobile
 	}
 
-	width := positiveInt(c.Query("w"), 0)
+	width := positiveInt(query.Get("w"), 0)
 	if width == 0 {
 		width = positiveInt(c.GetHeader("X-Viewport-Width"), 0)
 	}
@@ -703,16 +642,47 @@ func resolveType(c *gin.Context, mobileWidth int) model.ImageType {
 		return model.Mobile
 	}
 
-	userAgent := strings.ToLower(c.GetHeader("User-Agent"))
 	for _, keyword := range []string{
 		"android", "iphone", "ipad", "ipod", "mobile", "windows phone", "opera mini",
 	} {
-		if strings.Contains(userAgent, keyword) {
+		if containsFold(c.GetHeader("User-Agent"), keyword) {
 			return model.Mobile
 		}
 	}
 
 	return model.Desktop
+}
+
+// containsFold 做不区分大小写的子串匹配，且不分配：
+// 原来先 strings.ToLower 整个 UA 再比对，每个请求都要复制一遍 UA 字符串。
+func containsFold(haystack, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	if len(needle) > len(haystack) {
+		return false
+	}
+
+	for i := 0; i+len(needle) <= len(haystack); i++ {
+		match := true
+		for j := 0; j < len(needle); j++ {
+			if lowerASCII(haystack[i+j]) != needle[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+func lowerASCII(c byte) byte {
+	if c >= 'A' && c <= 'Z' {
+		return c + ('a' - 'A')
+	}
+	return c
 }
 
 func normalizeType(value string) model.ImageType {
@@ -741,12 +711,12 @@ func safeFilename(value string) string {
 	return value
 }
 
-/*
- * clientIP 统一委托给 middleware.GlobalClientIP。
- *
- * 保证转发头只在可信代理来源时才被解析，防止
- * 通过伪造 XFF 绕过基于 IP 的每日配额。
- */
 func clientIP(c *gin.Context) string {
 	return middleware.GlobalClientIP(c)
+}
+
+// prefersWebP 读 Accept 头做格式协商：浏览器用 <img src="/api/random"> 时
+// 会自己带上 image/webp，所以外链场景不需要额外参数。
+func prefersWebP(c *gin.Context) bool {
+	return strings.Contains(strings.ToLower(c.GetHeader("Accept")), "image/webp")
 }

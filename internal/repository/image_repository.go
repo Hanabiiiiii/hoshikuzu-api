@@ -5,10 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"random-image-api/internal/model"
 )
+
+const imageColumns = `id, uuid, original_name, filename, type, mime, extension,
+	size, width, height, created_at`
 
 type Repository struct {
 	db *sql.DB
@@ -35,42 +39,141 @@ func (r *Repository) NextNumber(tx *sql.Tx, imageType model.ImageType) (int64, e
 	return next, nil
 }
 
-func (r *Repository) Create(tx *sql.Tx, item *model.Image) error {
-	_, err := tx.Exec(`
+func (r *Repository) Create(tx *sql.Tx, item *model.Image) (int64, error) {
+	result, err := tx.Exec(`
 		INSERT INTO images(
 			uuid, original_name, filename, type, mime, extension,
 			size, width, height, created_at
 		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, item.UUID, item.OriginalName, item.Filename, item.Type, item.MIME,
 		item.Extension, item.Size, item.Width, item.Height, item.CreatedAt.UTC().Format(time.RFC3339Nano))
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	if _, err := tx.Exec(`
+		INSERT INTO image_stats(type, total) VALUES(?, 1)
+		ON CONFLICT(type) DO UPDATE SET total = total + 1
+	`, item.Type); err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }
 
 func (r *Repository) FindByID(id int64) (*model.Image, error) {
-	return scanImage(r.db.QueryRow(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
-		FROM images WHERE id = ?
-	`, id))
+	return scanImage(r.db.QueryRow(`SELECT `+imageColumns+` FROM images WHERE id = ?`, id))
 }
 
 func (r *Repository) FindByFilename(imageType model.ImageType, filename string) (*model.Image, error) {
-	return scanImage(r.db.QueryRow(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
-		FROM images WHERE type = ? AND filename = ?
-	`, imageType, filename))
+	return scanImage(r.db.QueryRow(
+		`SELECT `+imageColumns+` FROM images WHERE type = ? AND filename = ?`,
+		imageType, filename,
+	))
+}
+
+func (r *Repository) FindByIDs(ids []int64) (map[int64]*model.Image, error) {
+	found := make(map[int64]*model.Image, len(ids))
+	if len(ids) == 0 {
+		return found, nil
+	}
+
+	placeholders := make([]string, 0, len(ids))
+	args := make([]any, 0, len(ids))
+	for _, id := range ids {
+		placeholders = append(placeholders, "?")
+		args = append(args, id)
+	}
+
+	rows, err := r.db.Query(
+		`SELECT `+imageColumns+` FROM images WHERE id IN (`+strings.Join(placeholders, ",")+`)`,
+		args...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		item, err := scanImage(rows)
+		if err != nil {
+			return nil, err
+		}
+		found[item.ID] = item
+	}
+	return found, rows.Err()
+}
+
+func (r *Repository) EachImage(fn func(*model.Image) bool) error {
+	rows, err := r.db.Query(`SELECT ` + imageColumns + ` FROM images ORDER BY id`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		item, err := scanImage(rows)
+		if err != nil {
+			return err
+		}
+		if !fn(item) {
+			break
+		}
+	}
+	return rows.Err()
+}
+
+// IndexEntry 是随机取图目录用的最小字段集合。
+// 只取两列,避免为了拿文件名把整行（含 11 列 + 时间解析）扫出来。
+type IndexEntry struct {
+	ID       int64
+	Filename string
+}
+
+func (r *Repository) IndexEntries(imageType model.ImageType) ([]IndexEntry, error) {
+	rows, err := r.db.Query(`SELECT id, filename FROM images WHERE type = ? ORDER BY id`, imageType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	entries := make([]IndexEntry, 0, 1024)
+	for rows.Next() {
+		var entry IndexEntry
+		if err := rows.Scan(&entry.ID, &entry.Filename); err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, rows.Err()
+}
+
+// total 读 image_stats 的 O(1) 计数；行缺失时退回 COUNT(*) 并把行补上。
+func (r *Repository) total(imageType model.ImageType) (int64, error) {
+	var total int64
+	err := r.db.QueryRow(`SELECT total FROM image_stats WHERE type = ?`, imageType).Scan(&total)
+	if err == nil {
+		return total, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM images WHERE type = ?`, imageType).Scan(&total); err != nil {
+		return 0, err
+	}
+	_, _ = r.db.Exec(`INSERT OR REPLACE INTO image_stats(type, total) VALUES(?, ?)`, imageType, total)
+	return total, nil
 }
 
 func (r *Repository) List(imageType model.ImageType, offset, limit int) ([]model.Image, int64, error) {
-	var total int64
-	if err := r.db.QueryRow(`SELECT COUNT(*) FROM images WHERE type = ?`, imageType).Scan(&total); err != nil {
+	total, err := r.total(imageType)
+	if err != nil {
 		return nil, 0, err
 	}
 
 	rows, err := r.db.Query(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
+		SELECT `+imageColumns+`
 		FROM images
 		WHERE type = ?
 		ORDER BY id DESC
@@ -95,48 +198,36 @@ func (r *Repository) List(imageType model.ImageType, offset, limit int) ([]model
 	return items, total, nil
 }
 
-/*
- * Random 返回当前分类下的一张随机图片。
- *
- * 原实现用 ORDER BY RANDOM()，对每行生成随机数再排序，
- * 是 O(n) 全表扫描。图片量大时（几万张以上）会明显拖慢响应。
- *
- * 新实现：
- *  1. 拿到该分类的 min(id) / max(id)
- *  2. 在区间内随机取一个 id
- *  3. 向后/向前找第一条记录
- *
- * 走 (type, id) 索引，是 O(log n)。
- *
- * 注意：id 可能不连续（删除过图片），但用"找最近一条"解决。
- * 这是近似均匀随机，对随机壁纸场景完全够用。
- */
+// Random 走 (type, id) 索引，O(log n)，替代 ORDER BY RANDOM() 的全表扫描。
+// id 区间可能有空洞，命中时向后/向前回退一条。
+//
+// MIN / MAX 必须拆成两条语句：SQLite 的 min/max 索引优化只对单个聚合生效，
+// 写成 SELECT MIN(id), MAX(id) 会退化成整分区扫描（2 万张图实测 1.69ms → 36µs）。
 func (r *Repository) Random(imageType model.ImageType) (*model.Image, error) {
 	var minID, maxID sql.NullInt64
-	if err := r.db.QueryRow(
-		`SELECT MIN(id), MAX(id) FROM images WHERE type = ?`,
-		imageType,
-	).Scan(&minID, &maxID); err != nil {
+
+	if err := r.db.QueryRow(`SELECT MIN(id) FROM images WHERE type = ?`, imageType).Scan(&minID); err != nil {
 		return nil, err
 	}
-	if !minID.Valid || !maxID.Valid {
+	if !minID.Valid {
+		return nil, sql.ErrNoRows
+	}
+
+	if err := r.db.QueryRow(`SELECT MAX(id) FROM images WHERE type = ?`, imageType).Scan(&maxID); err != nil {
+		return nil, err
+	}
+	if !maxID.Valid || maxID.Int64 < minID.Int64 {
 		return nil, sql.ErrNoRows
 	}
 
 	span := maxID.Int64 - minID.Int64 + 1
-
-	var candidate int64
-	if span <= 1 {
-		candidate = minID.Int64
-	} else {
-		// rand.Int63n 是并发安全的，Go 1.20+ 自动播种
-		candidate = minID.Int64 + rand.Int63n(span)
+	candidate := minID.Int64
+	if span > 1 {
+		candidate += rand.Int63n(span)
 	}
 
-	// 先往后找
 	item, err := scanImage(r.db.QueryRow(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
+		SELECT `+imageColumns+`
 		FROM images
 		WHERE type = ? AND id >= ?
 		ORDER BY id ASC
@@ -149,10 +240,8 @@ func (r *Repository) Random(imageType model.ImageType) (*model.Image, error) {
 		return nil, err
 	}
 
-	// 没找到说明候选 id 落在尾部空洞里，往前找
 	return scanImage(r.db.QueryRow(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
+		SELECT `+imageColumns+`
 		FROM images
 		WHERE type = ? AND id < ?
 		ORDER BY id DESC
@@ -161,11 +250,7 @@ func (r *Repository) Random(imageType model.ImageType) (*model.Image, error) {
 }
 
 func (r *Repository) Delete(tx *sql.Tx, id int64) (*model.Image, error) {
-	item, err := scanImage(tx.QueryRow(`
-		SELECT id, uuid, original_name, filename, type, mime, extension,
-		       size, width, height, created_at
-		FROM images WHERE id = ?
-	`, id))
+	item, err := scanImage(tx.QueryRow(`SELECT `+imageColumns+` FROM images WHERE id = ?`, id))
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +266,19 @@ func (r *Repository) Delete(tx *sql.Tx, id int64) (*model.Image, error) {
 	}
 	if affected != 1 {
 		return nil, fmt.Errorf("delete image %d failed", id)
+	}
+
+	result, err = tx.Exec(`UPDATE image_stats SET total = total - 1 WHERE type = ?`, item.Type)
+	if err != nil {
+		return nil, err
+	}
+	if affected, err := result.RowsAffected(); err == nil && affected == 0 {
+		if _, err := tx.Exec(
+			`INSERT INTO image_stats(type, total) SELECT type, COUNT(*) FROM images WHERE type = ? GROUP BY type`,
+			item.Type,
+		); err != nil {
+			return nil, err
+		}
 	}
 
 	return item, nil

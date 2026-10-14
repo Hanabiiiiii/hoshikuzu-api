@@ -2,21 +2,32 @@ const TOKEN_KEY = "random-image-api.admin-token";
 const REMEMBER_KEY = "random-image-api.remember-token";
 const MODE_KEY = "random-image-api.mode";
 const DOWNLOAD_ORIGINAL_KEY = "random-image-api.download-original";
-const MAX_CLIENT_FILE_SIZE = 50 * 1024 * 1024;
+const THEME_KEY = "random-image-api.theme";
+const PAGE_SIZE_KEY = "random-image-api.page-size";
 
+const MAX_CLIENT_FILE_SIZE = 50 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
+const UPLOAD_CONCURRENCY = 3;
+const GALLERY_CACHE_LIMIT = 40;
 
 const state = {
     type: "desktop",
     page: 1,
-    size: 15,
+    size: 24,
     total: 0,
+    items: [],
+    query: "",
     selected: new Set(),
     files: [],
     uploading: false,
     mode: "thumb",
     downloadOriginal: false,
 };
+
+const tabPages = { desktop: 1, mobile: 1 };
+const tabTotals = { desktop: null, mobile: null };
+const galleryCache = new Map();
+const itemById = new Map();
 
 let currentRole = "guest";
 
@@ -29,18 +40,11 @@ const publicConfig = {
     guestDownloadThumbLimit: 0,
 };
 
-const tabPages = { desktop: 1, mobile: 1 };
-const GALLERY_CACHE_LIMIT = 40;
-const galleryCache = new Map();
-
 const $ = (id) => document.getElementById(id);
 
 function on(id, event, handler, options) {
     const el = $(id);
-    if (!el) {
-        console.warn(`[app] 缺少元素 #${id}，跳过 ${event} 绑定`);
-        return null;
-    }
+    if (!el) return null;
     el.addEventListener(event, handler, options);
     return el;
 }
@@ -65,7 +69,38 @@ function formatBytes(bytes) {
     return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-/* ===== Modal ===== */
+function debounce(fn, wait) {
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), wait);
+    };
+}
+
+/* ===== 主题 ===== */
+
+const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+function applyTheme() {
+    const saved = localStorage.getItem(THEME_KEY) || "auto";
+    const dark = saved === "dark" || (saved === "auto" && darkQuery.matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = dark ? "#090b16" : "#f3f4fb";
+}
+
+function toggleTheme() {
+    const current = document.documentElement.dataset.theme;
+    localStorage.setItem(THEME_KEY, current === "dark" ? "light" : "dark");
+    applyTheme();
+}
+
+darkQuery.addEventListener("change", () => {
+    if (!localStorage.getItem(THEME_KEY) || localStorage.getItem(THEME_KEY) === "auto") applyTheme();
+});
+
+/* ===== 弹窗 / 提示 ===== */
 
 let lastFocusedElement = null;
 
@@ -82,28 +117,59 @@ function showModal(element, visible) {
         return;
     }
 
-    if (
-        document.activeElement &&
-        element.contains(document.activeElement) &&
-        typeof document.activeElement.blur === "function"
-    ) {
-        document.activeElement.blur();
-    }
+    if (document.activeElement?.blur) document.activeElement.blur();
 
     element.classList.add("hidden");
     element.setAttribute("inert", "");
     element.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("modal-open");
 
-    if (
-        lastFocusedElement &&
-        document.contains(lastFocusedElement) &&
-        typeof lastFocusedElement.focus === "function"
-    ) {
-        try { lastFocusedElement.focus({ preventScroll: true }); } catch {}
+    if (!document.querySelector(".modal:not(.hidden)")) {
+        document.body.classList.remove("modal-open");
     }
 
+    if (lastFocusedElement?.focus && document.contains(lastFocusedElement)) {
+        try { lastFocusedElement.focus({ preventScroll: true }); } catch {}
+    }
     lastFocusedElement = null;
+}
+
+function isModalOpen(id) {
+    return !$(id)?.classList.contains("hidden");
+}
+
+function showToast(message, type = "") {
+    const toast = $("toast");
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.classList.toggle("is-error", type === "error");
+    toast.classList.add("show");
+
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 2400);
+}
+
+function askConfirm({ title, message, okText = "确定", danger = false, cancel = true }) {
+    const dialog = $("confirmDialog");
+    if (!dialog || typeof dialog.showModal !== "function") {
+        return Promise.resolve(window.confirm(message));
+    }
+
+    $("confirmTitle").textContent = title;
+    $("confirmMessage").textContent = message;
+
+    const ok = $("confirmOk");
+    ok.textContent = okText;
+    ok.className = danger ? "btn danger" : "btn primary";
+
+    const cancelBtn = $("confirmCancel");
+    cancelBtn.hidden = !cancel;
+
+    dialog.returnValue = "";
+    return new Promise((resolve) => {
+        dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok"), { once: true });
+        dialog.showModal();
+    });
 }
 
 /* ===== 公开配置 ===== */
@@ -111,13 +177,10 @@ function showModal(element, visible) {
 async function loadPublicConfig() {
     try {
         const resp = await fetch("/api/public-config", { cache: "no-store" });
-        if (!resp.ok) {
-            console.error(`[app] /api/public-config 返回 HTTP ${resp.status}`);
-            return;
-        }
+        if (!resp.ok) return;
 
-        const data = await resp.json();
-        const p = data?.data || {};
+        const payload = await resp.json();
+        const p = payload?.data || {};
 
         publicConfig.guestToken = String(p.guest_token || "");
         publicConfig.whitelistActive = Boolean(p.whitelist_active);
@@ -126,29 +189,32 @@ async function loadPublicConfig() {
         publicConfig.guestDownloadOriginalLimit = Number(p.guest_download_original_limit) || 0;
         publicConfig.guestDownloadThumbLimit = Number(p.guest_download_thumb_limit) || 0;
 
-        console.log("[app] public-config 已加载", publicConfig);
         renderPublicConfig();
     } catch (err) {
-        console.error("[app] 加载 public-config 失败", err);
+        console.warn("[app] public-config 加载失败", err);
     }
 }
 
 function renderPublicConfig() {
     const whitelistStrip = $("whitelistStrip");
-    if (whitelistStrip) {
-        whitelistStrip.hidden = !publicConfig.whitelistActive;
-    }
+    if (whitelistStrip) whitelistStrip.hidden = !publicConfig.whitelistActive;
 
     const strip = $("visitorStrip");
-    if (strip && publicConfig.guestToken) {
-        strip.hidden = false;
+    if (!strip || !publicConfig.guestToken) return;
 
-        if ($("guestTokenDisplay")) $("guestTokenDisplay").textContent = publicConfig.guestToken;
-        if ($("guestApiThumb")) $("guestApiThumb").textContent = publicConfig.guestApiThumbLimit > 0 ? publicConfig.guestApiThumbLimit : "∞";
-        if ($("guestApiOriginal")) $("guestApiOriginal").textContent = publicConfig.guestApiOriginalLimit > 0 ? publicConfig.guestApiOriginalLimit : "∞";
-        if ($("guestDownloadThumb")) $("guestDownloadThumb").textContent = publicConfig.guestDownloadThumbLimit > 0 ? publicConfig.guestDownloadThumbLimit : "∞";
-        if ($("guestDownloadOriginal")) $("guestDownloadOriginal").textContent = publicConfig.guestDownloadOriginalLimit > 0 ? publicConfig.guestDownloadOriginalLimit : "∞";
-    }
+    strip.hidden = false;
+
+    const quota = (value) => (value > 0 ? value : "∞");
+    setText("guestTokenDisplay", publicConfig.guestToken);
+    setText("guestApiThumb", quota(publicConfig.guestApiThumbLimit));
+    setText("guestApiOriginal", quota(publicConfig.guestApiOriginalLimit));
+    setText("guestDownloadThumb", quota(publicConfig.guestDownloadThumbLimit));
+    setText("guestDownloadOriginal", quota(publicConfig.guestDownloadOriginalLimit));
+}
+
+function setText(id, value) {
+    const el = $(id);
+    if (el) el.textContent = value;
 }
 
 async function ensureGuestTokenLoaded() {
@@ -157,7 +223,7 @@ async function ensureGuestTokenLoaded() {
     return publicConfig.guestToken;
 }
 
-/* ===== Token ===== */
+/* ===== 密钥 ===== */
 
 function apiToken() {
     const input = $("tokenInput");
@@ -165,29 +231,29 @@ function apiToken() {
 }
 
 function saveToken() {
-    const rememberEl = $("rememberKey");
-    const remember = rememberEl ? rememberEl.checked : false;
+    const remember = $("rememberKey")?.checked || false;
     const token = apiToken();
 
     if (remember && token) {
         localStorage.setItem(TOKEN_KEY, token);
         localStorage.setItem(REMEMBER_KEY, "1");
-    } else {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REMEMBER_KEY);
+        return;
     }
+
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0");
 }
 
 function restoreToken() {
     const remember = localStorage.getItem(REMEMBER_KEY) === "1";
     const saved = localStorage.getItem(TOKEN_KEY);
+
     const rememberEl = $("rememberKey");
-    const tokenEl = $("tokenInput");
     if (rememberEl) rememberEl.checked = remember;
+
+    const tokenEl = $("tokenInput");
     if (tokenEl) tokenEl.value = remember && saved ? saved : "";
 }
-
-/* ===== 角色识别 ===== */
 
 async function detectRole() {
     const token = apiToken();
@@ -203,13 +269,8 @@ async function detectRole() {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
         });
-
-        if (!resp.ok) {
-            currentRole = "guest";
-        } else {
-            const data = await resp.json();
-            currentRole = data?.data?.role === "admin" ? "admin" : "guest";
-        }
+        const data = resp.ok ? await resp.json() : null;
+        currentRole = data?.data?.role === "admin" ? "admin" : "guest";
     } catch {
         currentRole = "guest";
     }
@@ -221,10 +282,7 @@ async function probeRole(token) {
     if (!token) return { role: "empty" };
 
     await ensureGuestTokenLoaded();
-
-    if (publicConfig.guestToken && token === publicConfig.guestToken) {
-        return { role: "guest" };
-    }
+    if (publicConfig.guestToken && token === publicConfig.guestToken) return { role: "guest" };
 
     try {
         const resp = await fetch("/api/whoami", {
@@ -235,10 +293,8 @@ async function probeRole(token) {
 
         const data = await resp.json();
         const role = data?.data?.role;
-        const reason = data?.data?.reason;
-
         if (role === "admin") return { role: "admin" };
-        if (reason === "whitelist_blocked") return { role: "blocked" };
+        if (data?.data?.reason === "whitelist_blocked") return { role: "blocked" };
         return { role: "invalid" };
     } catch {
         return { role: "invalid" };
@@ -251,201 +307,166 @@ function applyRoleUI() {
     document.body.classList.toggle("is-admin", isAdmin);
     document.body.classList.toggle("is-guest", !isAdmin);
 
-    const roleLabel = $("currentRoleLabel");
-    if (roleLabel) {
-        roleLabel.textContent = isAdmin
-            ? "管理员 · 点击修改密钥"
-            : "访客 · 点击设置密钥";
-    }
-
+    setText("currentRoleLabel", isAdmin ? "管理员 · 修改密钥" : "访客 · 设置密钥");
     applyModeUI();
 }
 
-/* ===== 加速 / 原图 模式 ===== */
+/* ===== API 模式 ===== */
 
 function restoreMode() {
-    const saved = localStorage.getItem(MODE_KEY);
-    state.mode = saved === "original" ? "original" : "thumb";
+    state.mode = localStorage.getItem(MODE_KEY) === "original" ? "original" : "thumb";
     applyModeUI();
-}
-
-function saveMode() {
-    localStorage.setItem(MODE_KEY, state.mode);
 }
 
 function applyModeUI() {
     document.querySelectorAll(".mode-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.mode === state.mode);
     });
-
-    const link = $("randomApiLink");
-    if (link) link.href = apiAutoURL();
-
     updateAPIBox();
 }
 
 function setMode(mode) {
     if (mode !== "thumb" && mode !== "original") return;
     state.mode = mode;
-    saveMode();
+    localStorage.setItem(MODE_KEY, mode);
     applyModeUI();
 }
 
-/* ===== 下载原图开关 ===== */
-
 function restoreDownloadOriginal() {
-    const saved = localStorage.getItem(DOWNLOAD_ORIGINAL_KEY) === "1";
-    state.downloadOriginal = saved;
+    state.downloadOriginal = localStorage.getItem(DOWNLOAD_ORIGINAL_KEY) === "1";
     const el = $("downloadOriginal");
-    if (el) el.checked = saved;
+    if (el) el.checked = state.downloadOriginal;
 }
 
 function saveDownloadOriginal() {
-    localStorage.setItem(
-        DOWNLOAD_ORIGINAL_KEY,
-        state.downloadOriginal ? "1" : "0",
-    );
+    localStorage.setItem(DOWNLOAD_ORIGINAL_KEY, state.downloadOriginal ? "1" : "0");
 }
-
-/* ===== API URL ===== */
 
 function apiAutoURL() {
     const width = Math.max(1, window.innerWidth);
-    const modeQS = state.mode === "original" ? "&mode=original" : "";
+    const params = new URLSearchParams({ type: "auto", w: String(width) });
 
-    let tokenQS = "";
-    if (state.mode === "original" && currentRole === "admin") {
+    if (state.mode === "original") {
+        params.set("mode", "original");
         const token = apiToken();
-        if (token) {
-            tokenQS = `&token=${encodeURIComponent(token)}`;
-        }
+        if (token && currentRole === "admin") params.set("token", token);
     }
 
-    return `${location.origin}/api/random?type=auto&w=${width}${modeQS}${tokenQS}`;
+    return `${location.origin}/api/random?${params}`;
 }
 
 function updateAPIBox() {
-    const width = Math.max(1, window.innerWidth);
+    const url = apiAutoURL();
 
     const apiElement = $("apiUrl");
     if (apiElement) {
-        const url = apiAutoURL();
         apiElement.textContent = url;
         apiElement.title = url;
     }
 
-    const widthElement = $("currentWidth");
-    if (widthElement) widthElement.textContent = `${width}px`;
+    document.querySelectorAll("#randomApiLink, #randomHeroLink").forEach((link) => {
+        link.href = url;
+    });
 
-    const typeElement = $("currentDeviceType");
-    if (typeElement) typeElement.textContent = width <= 768 ? "Mobile" : "Desktop";
+    const width = Math.max(1, window.innerWidth);
+    setText("currentWidth", `${width}px`);
+    setText("currentDeviceType", width <= 768 ? "Mobile" : "Desktop");
 }
 
-/* ===== Toast ===== */
-
-function showToast(message) {
-    const toast = $("toast");
-    if (!toast) return;
-
-    toast.textContent = message;
-    toast.classList.add("show");
-
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
-}
-
-/* ===== 复制 ===== */
-
-async function copyText(text, sourceButton) {
+async function copyText(text, button) {
     if (!text) {
         showToast("没有可复制的内容");
         return false;
     }
 
-    const originalHTML = sourceButton ? sourceButton.innerHTML : "";
+    const originalHTML = button ? button.innerHTML : "";
     const flash = (label) => {
-        if (!sourceButton) return;
-        sourceButton.innerHTML = label;
-        window.setTimeout(() => { sourceButton.innerHTML = originalHTML; }, 1200);
+        if (!button) return;
+        button.innerHTML = label;
+        setTimeout(() => { button.innerHTML = originalHTML; }, 1200);
     };
 
     if (navigator.clipboard && window.isSecureContext) {
         try {
             await navigator.clipboard.writeText(text);
             showToast("已复制到剪贴板 ✨");
-            flash("✓ 已复制");
+            flash("✓");
             return true;
-        } catch (err) {
-            console.warn("[app] navigator.clipboard 失败", err);
-        }
+        } catch {}
     }
 
     try {
         const ta = document.createElement("textarea");
         ta.value = text;
         ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.top = "0";
-        ta.style.left = "0";
-        ta.style.width = "1px";
-        ta.style.height = "1px";
-        ta.style.opacity = "0";
+        ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
         document.body.appendChild(ta);
-        ta.focus();
         ta.select();
         ta.setSelectionRange(0, ta.value.length);
         const ok = document.execCommand("copy");
         ta.remove();
         if (ok) {
             showToast("已复制到剪贴板 ✨");
-            flash("✓ 已复制");
+            flash("✓");
             return true;
         }
-    } catch (err) {
-        console.warn("[app] execCommand 失败", err);
-    }
+    } catch {}
 
-    try {
-        window.prompt("复制下面的内容：", text);
-        return true;
-    } catch {
-        showToast("复制失败，请手动复制");
-        return false;
-    }
+    showToast("复制失败，请手动复制", "error");
+    return false;
 }
 
-/* ===== 图片卡片 ===== */
+/* ===== 卡片 ===== */
 
-function pickDisplayURL(item) {
+function pickGridURL(item) {
+    return item.grid_url || item.thumbnail_url || item.url;
+}
+
+function pickPreviewURL(item) {
     return item.thumbnail_url || item.url;
+}
+
+function matchesQuery(item) {
+    if (!state.query) return true;
+    const q = state.query.toLowerCase();
+    return (
+        String(item.filename).toLowerCase().includes(q) ||
+        String(item.original_name).toLowerCase().includes(q)
+    );
 }
 
 function imageCard(item) {
     const checked = state.selected.has(item.id) ? "checked" : "";
     const caption = `${item.original_name} · ${item.width}×${item.height} · ${formatBytes(item.size)}`;
-    const displayUrl = pickDisplayURL(item);
-
+    const previewURL = pickPreviewURL(item);
     const smallTag = item.has_thumbnail === false
-        ? ' <span class="small-tag" title="此图较小，未生成缩略图，下载即为原始文件">小图</span>'
-        : '';
+        ? ' <span class="small-tag" title="此图较小，未单独生成缩略图，下载即为原始文件">小图</span>'
+        : "";
 
     return `
-    <article class="image-card">
+    <article class="image-card" data-card-id="${item.id}">
       <div class="thumb-wrap">
-        <input class="check" type="checkbox" data-select-id="${item.id}" ${checked}
-          aria-label="选择 ${escapeAttr(item.filename)}">
-        <span class="badge">${item.type.toUpperCase()}</span>
-        <img class="thumb" loading="lazy" decoding="async" fetchpriority="low"
-          src="${escapeAttr(displayUrl)}" alt="${escapeAttr(item.original_name)}"
-          data-preview="${escapeAttr(displayUrl)}" data-caption="${escapeAttr(caption)}">
+        <img class="thumb" loading="lazy" decoding="async"
+          src="${escapeAttr(pickGridURL(item))}" alt="${escapeAttr(item.original_name)}"
+          data-preview="${escapeAttr(previewURL)}" data-caption="${escapeAttr(caption)}">
+        <label class="check" title="选择这张图片">
+          <input type="checkbox" data-select-id="${item.id}" ${checked} aria-label="选择 ${escapeAttr(item.filename)}">
+          <svg class="icon"><use href="#i-check"/></svg>
+        </label>
+        <span class="badge">${escapeHTML(String(item.type).toUpperCase())}</span>
+        <div class="thumb-actions">
+          <button class="chip-btn" type="button" data-preview="${escapeAttr(previewURL)}" data-caption="${escapeAttr(caption)}">
+            <svg class="icon"><use href="#i-expand"/></svg><span>预览</span>
+          </button>
+          <button class="chip-btn" type="button" data-download-id="${item.id}">
+            <svg class="icon"><use href="#i-download"/></svg><span>下载</span>
+          </button>
+        </div>
       </div>
       <div class="image-body">
         <div class="filename" title="${escapeAttr(item.filename)}">${escapeHTML(item.filename)}</div>
-        <div class="image-meta">${item.width} × ${item.height} · ${formatBytes(item.size)}${smallTag}</div>
-        <div class="image-meta" title="${escapeAttr(item.original_name)}">原名：${escapeHTML(item.original_name)}</div>
-        <div class="image-actions">
-          <button class="btn" data-preview="${escapeAttr(displayUrl)}" data-caption="${escapeAttr(caption)}">预览</button>
-          <button class="btn" data-download-id="${item.id}">下载</button>
+        <div class="image-meta" title="${escapeAttr(item.original_name)}">
+          ${item.width} × ${item.height} · ${formatBytes(item.size)}${smallTag}
         </div>
       </div>
     </article>`;
@@ -456,53 +477,99 @@ function imageCard(item) {
 function galleryCacheKey(type, page, size) {
     return `${type}:${page}:${size}`;
 }
-function clearGalleryCache() { galleryCache.clear(); }
+
+function clearGalleryCache() {
+    galleryCache.clear();
+}
+
 function cacheGalleryResult(type, page, size, result) {
     const key = galleryCacheKey(type, page, size);
     if (galleryCache.size >= GALLERY_CACHE_LIMIT) {
-        const oldest = galleryCache.keys().next().value;
-        galleryCache.delete(oldest);
+        galleryCache.delete(galleryCache.keys().next().value);
     }
     galleryCache.set(key, result);
 }
 
 async function fetchGalleryPage(type, page, size) {
     const params = new URLSearchParams({ type, page: String(page), size: String(size) });
-    const response = await fetch(`/api/images?${params}`, { cache: "no-store" });
+    const response = await fetch(`/api/images?${params}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json, image/webp" },
+    });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.message || "加载失败");
     return result;
 }
 
-function applyGalleryResult(result) {
-    state.total = Number(result.data.total);
-    const maxPage = Math.max(1, Math.ceil(state.total / state.size));
-    if (state.page > maxPage) state.page = maxPage;
-    tabPages[state.type] = state.page;
+function renderSkeletons(count = 8) {
+    const gallery = $("gallery");
+    if (!gallery) return;
+    gallery.innerHTML = Array.from(
+        { length: count },
+        () => `<div class="skeleton skeleton-card" aria-hidden="true"></div>`,
+    ).join("");
+}
 
-    const visibleIds = new Set(result.data.items.map((i) => i.id));
-    for (const id of state.selected) {
-        if (!visibleIds.has(id)) state.selected.delete(id);
+function renderGallery() {
+    const gallery = $("gallery");
+    if (!gallery) return;
+
+    const visible = state.items.filter(matchesQuery);
+
+    if (!state.items.length) {
+        gallery.innerHTML = `<div class="empty">当前分类还没有图片</div>`;
+    } else if (!visible.length) {
+        gallery.innerHTML = `<div class="empty">没有匹配「${escapeHTML(state.query)}」的图片</div>`;
+    } else {
+        gallery.innerHTML = visible.map(imageCard).join("");
     }
 
-    const stats = $("galleryStats");
-    if (stats) stats.textContent = `${state.total} 张图片 · 第 ${state.page}/${maxPage} 页`;
+    renderStats(visible.length);
+}
 
-    const pageInfo = $("pageInfo");
-    if (pageInfo) pageInfo.textContent = `${state.page} / ${maxPage}`;
+function renderStats(visibleCount) {
+    const maxPage = Math.max(1, Math.ceil(state.total / state.size));
+    const matched = state.query ? ` · 匹配 ${visibleCount}/${state.items.length}` : "";
+
+    setText("galleryStats", state.total
+        ? `${state.total} 张图片 · 第 ${state.page}/${maxPage} 页${matched}`
+        : "还没有图片");
+    setText("pageInfo", `${state.page} / ${maxPage}`);
 
     const prev = $("prevPage");
     if (prev) prev.disabled = state.page <= 1;
     const next = $("nextPage");
     if (next) next.disabled = state.page >= maxPage;
 
-    const gallery = $("gallery");
-    if (gallery) {
-        gallery.innerHTML = result.data.items.length
-            ? result.data.items.map(imageCard).join("")
-            : `<div class="empty">当前分类还没有图片。</div>`;
+    setText("currentTypeBadge", state.type === "mobile" ? "Mobile" : "Desktop");
+    const badge = $("currentTypeBadge");
+    if (badge) {
+        badge.classList.toggle("desktop", state.type === "desktop");
+        badge.classList.toggle("mobile", state.type === "mobile");
     }
 
+    tabTotals[state.type] = state.total;
+    setText("desktopCount", tabTotals.desktop ?? "-");
+    setText("mobileCount", tabTotals.mobile ?? "-");
+}
+
+function applyGalleryResult(result) {
+    state.total = Number(result.data.total) || 0;
+    state.items = Array.isArray(result.data.items) ? result.data.items : [];
+
+    itemById.clear();
+    for (const item of state.items) itemById.set(item.id, item);
+
+    const maxPage = Math.max(1, Math.ceil(state.total / state.size));
+    if (state.page > maxPage) state.page = maxPage;
+    tabPages[state.type] = state.page;
+
+    const visibleIds = new Set(state.items.map((item) => item.id));
+    for (const id of state.selected) {
+        if (!visibleIds.has(id)) state.selected.delete(id);
+    }
+
+    renderGallery();
     updateSelectionUI();
 }
 
@@ -510,16 +577,15 @@ async function loadGallery({ force = false } = {}) {
     if (force) clearGalleryCache();
 
     const { type, page, size } = state;
-    const key = galleryCacheKey(type, page, size);
+    const cached = galleryCache.get(galleryCacheKey(type, page, size));
 
-    if (galleryCache.has(key)) {
-        applyGalleryResult(galleryCache.get(key));
+    if (cached) {
+        applyGalleryResult(cached);
         schedulePrefetch();
         return;
     }
 
-    const gallery = $("gallery");
-    if (gallery) gallery.innerHTML = `<div class="empty">加载中...</div>`;
+    renderSkeletons(size > 24 ? 12 : 8);
 
     try {
         const result = await fetchGalleryPage(type, page, size);
@@ -527,67 +593,93 @@ async function loadGallery({ force = false } = {}) {
         applyGalleryResult(result);
         schedulePrefetch();
     } catch (error) {
+        const gallery = $("gallery");
         if (gallery) gallery.innerHTML = `<div class="empty">加载失败：${escapeHTML(error.message)}</div>`;
+        setText("galleryStats", "加载失败");
     }
 }
 
 let prefetchTimer = null;
+
 function schedulePrefetch() {
     clearTimeout(prefetchTimer);
     prefetchTimer = setTimeout(prefetchAdjacentPages, 600);
 }
+
 function prefetchAdjacentPages() {
     const { type, page, size, total } = state;
     const maxPage = Math.max(1, Math.ceil(total / size));
+
     for (const target of [page + 1, page - 1]) {
         if (target < 1 || target > maxPage) continue;
-        const key = galleryCacheKey(type, target, size);
-        if (galleryCache.has(key)) continue;
+        if (galleryCache.has(galleryCacheKey(type, target, size))) continue;
         fetchGalleryPage(type, target, size)
             .then((result) => cacheGalleryResult(type, target, size, result))
             .catch(() => {});
     }
 }
 
+async function refreshTabCounts() {
+    const other = state.type === "desktop" ? "mobile" : "desktop";
+    try {
+        const result = await fetchGalleryPage(other, 1, 1);
+        tabTotals[other] = Number(result.data.total) || 0;
+        setText(other === "desktop" ? "desktopCount" : "mobileCount", tabTotals[other]);
+    } catch {}
+}
+
 function updateSelectionUI() {
     const count = state.selected.size;
-    const info = $("selectionInfo");
-    if (info) info.textContent = `已选 ${count}`;
+
+    setText("selectionInfo", count ? `已选 ${count} 张` : "未选择");
+    document.body.classList.toggle("has-selection", count > 0);
+
     const del = $("batchDelete");
     if (del) del.disabled = count === 0;
     const dl = $("batchDownload");
     if (dl) dl.disabled = count === 0;
 }
 
-/* ===== 上传列表 ===== */
+/* ===== 上传 ===== */
 
 function createFileKey(file) {
     return [file.name, file.size, file.lastModified].join("|");
 }
 
 function addFiles(fileList) {
-    const incoming = Array.from(fileList || []);
-    for (const file of incoming) {
+    let added = 0;
+    let skipped = 0;
+
+    for (const file of Array.from(fileList || [])) {
         const lowerName = file.name.toLowerCase();
-        const ext = lowerName.includes(".")
-            ? lowerName.slice(lowerName.lastIndexOf("."))
-            : "";
-        if (!ALLOWED_EXTENSIONS.includes(ext)) continue;
-        if (file.size <= 0 || file.size > MAX_CLIENT_FILE_SIZE) continue;
+        const ext = lowerName.includes(".") ? lowerName.slice(lowerName.lastIndexOf(".")) : "";
+
+        if (!ALLOWED_EXTENSIONS.includes(ext) || file.size <= 0 || file.size > MAX_CLIENT_FILE_SIZE) {
+            skipped++;
+            continue;
+        }
 
         const key = createFileKey(file);
         if (state.files.some((item) => item.key === key)) continue;
 
         state.files.push({ key, file, status: "pending", message: "等待上传", progress: 0, xhr: null });
+        added++;
     }
+
     renderFileList();
+    if (skipped) showToast(`已跳过 ${skipped} 个不支持或超限的文件`, "error");
+    else if (added) showToast(`已添加 ${added} 张图片`);
 }
 
 function removeFile(key) {
     const index = state.files.findIndex((item) => item.key === key);
     if (index === -1) return;
-    const item = state.files[index];
-    if (item.status === "uploading") { item.xhr?.abort(); return; }
+
+    if (state.files[index].status === "uploading") {
+        state.files[index].xhr?.abort();
+        return;
+    }
+
     state.files.splice(index, 1);
     renderFileList();
 }
@@ -595,12 +687,12 @@ function removeFile(key) {
 function renderFileList() {
     const fileList = $("fileList");
     const fileSummary = $("fileSummary");
-    const startUpload = $("startUpload");
+    const startUploadBtn = $("startUpload");
 
     if (!state.files.length) {
         if (fileList) fileList.innerHTML = "";
         if (fileSummary) fileSummary.textContent = "未选择文件";
-        if (startUpload) startUpload.disabled = true;
+        if (startUploadBtn) startUploadBtn.disabled = true;
         return;
     }
 
@@ -609,28 +701,25 @@ function renderFileList() {
     const pendingCount = state.files.filter((i) => i.status === "pending").length;
     const failedCount = state.files.filter((i) => i.status === "failed" || i.status === "cancelled").length;
 
-    let summaryText = `已选择 ${state.files.length} 张 · ${formatBytes(totalSize)}`;
-    if (failedCount > 0) summaryText += ` · ${failedCount} 张需重试`;
+    let summary = `已选 ${state.files.length} 张 · ${formatBytes(totalSize)}`;
+    if (failedCount > 0) summary += ` · ${failedCount} 张待重试`;
 
-    if (fileSummary) fileSummary.textContent = summaryText;
-    if (startUpload) startUpload.disabled = uploadingCount > 0 || pendingCount === 0;
+    if (fileSummary) fileSummary.textContent = summary;
+    if (startUploadBtn) startUploadBtn.disabled = uploadingCount > 0 || pendingCount === 0;
     if (!fileList) return;
 
     fileList.innerHTML = state.files.map((item) => {
-        const statusText = item.message || "";
         let action = "";
+
         if (item.status === "pending") {
-            action = `<button class="remove-file" data-remove-file="${escapeAttr(item.key)}" title="移除">×</button>`;
-        }
-        if (item.status === "uploading") {
-            action = `<button class="cancel-file" data-cancel-file="${escapeAttr(item.key)}" title="取消上传">取消</button>`;
-        }
-        if (item.status === "success") {
-            action = `<span class="file-success">✓</span>`;
-        }
-        if (item.status === "failed" || item.status === "cancelled") {
-            action = `<button class="retry-file" data-retry-file="${escapeAttr(item.key)}" title="重新上传">↻</button>
-                      <button class="remove-file" data-remove-file="${escapeAttr(item.key)}" title="移除">×</button>`;
+            action = `<button type="button" data-remove-file="${escapeAttr(item.key)}" title="移除">×</button>`;
+        } else if (item.status === "uploading") {
+            action = `<button type="button" data-cancel-file="${escapeAttr(item.key)}" title="取消上传">取消</button>`;
+        } else if (item.status === "success") {
+            action = `<span class="file-tick">✓</span>`;
+        } else {
+            action = `<button type="button" data-retry-file="${escapeAttr(item.key)}" title="重新上传">↻</button>
+                      <button type="button" data-remove-file="${escapeAttr(item.key)}" title="移除">×</button>`;
         }
 
         const progress = item.status === "uploading"
@@ -644,7 +733,7 @@ function renderFileList() {
         <div class="file-row-main">
           <div class="file-name-wrap">
             <div class="file-name" title="${escapeAttr(item.file.name)}">${escapeHTML(item.file.name)}</div>
-            <div class="file-message">${escapeHTML(statusText)}</div>
+            <div class="file-message">${escapeHTML(item.message || "")}</div>
           </div>
           <div class="file-status">${formatBytes(item.file.size)}</div>
           <div class="file-action">${action}</div>
@@ -656,7 +745,7 @@ function renderFileList() {
 
 function uploadOne(item, token) {
     item.status = "uploading";
-    item.message = "上传中...";
+    item.message = "上传中…";
     item.progress = 0;
     renderFileList();
 
@@ -684,33 +773,45 @@ function uploadOne(item, token) {
             const percent = Math.round((event.loaded / event.total) * 100);
             item.progress = percent;
             item.message = `上传中 ${percent}%`;
+
             const row = document.querySelector(`[data-file-key="${CSS.escape(item.key)}"]`);
-            if (row) {
-                const bar = row.querySelector(".file-progress-bar");
-                if (bar) bar.style.width = `${percent}%`;
-                const msg = row.querySelector(".file-message");
-                if (msg) msg.textContent = item.message;
-            }
+            if (!row) return;
+
+            const bar = row.querySelector(".file-progress-bar");
+            if (bar) bar.style.width = `${percent}%`;
+            const msg = row.querySelector(".file-message");
+            if (msg) msg.textContent = item.message;
         };
 
         xhr.onload = () => {
             let result = {};
             try { result = JSON.parse(xhr.responseText || "{}"); } catch {}
 
-            if (xhr.status === 401) { item.status = "failed"; item.message = "密钥错误"; item.progress = 0; finish(false); return; }
-            if (xhr.status === 403) { item.status = "failed"; item.message = "无权限"; item.progress = 0; finish(false); return; }
-            if (xhr.status < 200 || xhr.status >= 300 || !result.success) {
+            if (xhr.status === 401) {
                 item.status = "failed";
-                item.message = result.message || `HTTP ${xhr.status}`;
-                item.progress = 0;
+                item.message = "密钥错误";
                 finish(false);
                 return;
             }
+            if (xhr.status === 403) {
+                item.status = "failed";
+                item.message = "无权限";
+                finish(false);
+                return;
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !result.success) {
+                item.status = "failed";
+                item.message = result.message || `HTTP ${xhr.status}`;
+                finish(false);
+                return;
+            }
+
             item.status = "success";
             item.message = "上传完成";
             item.progress = 100;
             finish(true);
         };
+
         xhr.onerror = () => { item.status = "failed"; item.message = "网络错误"; finish(false); };
         xhr.ontimeout = () => { item.status = "failed"; item.message = "请求超时"; finish(false); };
         xhr.onabort = () => { item.status = "cancelled"; item.message = "已取消"; finish(false); };
@@ -722,77 +823,98 @@ function uploadOne(item, token) {
 async function startUpload() {
     if (state.uploading) return;
 
+    const resultBox = $("uploadResult");
+
     if (currentRole !== "admin") {
-        const r = $("uploadResult");
-        if (r) r.textContent = "当前身份不是管理员，请先设置密钥。";
-        showToast("请先设置管理员密钥");
+        if (resultBox) resultBox.textContent = "当前身份不是管理员，请先设置密钥。";
+        showToast("请先设置管理员密钥", "error");
         return;
     }
 
     const token = apiToken();
     if (!token) {
-        const r = $("uploadResult");
-        if (r) r.textContent = "请输入密钥。";
+        if (resultBox) resultBox.textContent = "请输入密钥。";
         return;
     }
 
     saveToken();
 
-    const pending = state.files.filter((i) => i.status === "pending");
-    if (!pending.length) {
-        const r = $("uploadResult");
-        if (r) r.textContent = "没有待上传的图片。";
+    const queue = state.files.filter((item) => item.status === "pending");
+    if (!queue.length) {
+        if (resultBox) resultBox.textContent = "没有待上传的图片。";
         return;
     }
 
     state.uploading = true;
-    const cf = $("clearFiles"); const fi = $("fileInput"); const su = $("startUpload");
-    if (cf) cf.disabled = true;
-    if (fi) fi.disabled = true;
-    if (su) su.disabled = true;
+    $("clearFiles")?.setAttribute("disabled", "");
+    $("fileInput")?.setAttribute("disabled", "");
 
-    let successCount = 0, failedCount = 0, cancelledCount = 0;
+    let cursor = 0;
+    let successCount = 0;
+    let failedCount = 0;
+    let cancelledCount = 0;
 
-    for (const item of pending) {
-        if (item.status !== "pending") continue;
-        const success = await uploadOne(item, token);
-        if (success) successCount++;
-        else if (item.status === "cancelled") cancelledCount++;
-        else failedCount++;
+    const report = () => {
+        if (resultBox) {
+            resultBox.textContent = `处理中：${successCount} 成功 · ${failedCount} 失败 · ${cancelledCount} 取消`;
+        }
+    };
 
-        const r = $("uploadResult");
-        if (r) r.textContent = `处理中：${successCount} 成功 · ${failedCount} 失败 · ${cancelledCount} 取消`;
-    }
+    const worker = async () => {
+        while (cursor < queue.length) {
+            const item = queue[cursor++];
+            const ok = await uploadOne(item, token);
+
+            if (ok) successCount++;
+            else if (item.status === "cancelled") cancelledCount++;
+            else failedCount++;
+
+            report();
+        }
+    };
+
+    await Promise.all(
+        Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }, worker),
+    );
 
     state.uploading = false;
-    if (cf) cf.disabled = false;
-    if (fi) fi.disabled = false;
+    $("clearFiles")?.removeAttribute("disabled");
+    $("fileInput")?.removeAttribute("disabled");
     renderFileList();
 
-    const r = $("uploadResult");
-    if (r) r.textContent = `处理完成：${successCount} 成功 · ${failedCount} 失败 · ${cancelledCount} 取消`;
+    if (resultBox) {
+        resultBox.textContent = `完成：${successCount} 成功 · ${failedCount} 失败 · ${cancelledCount} 取消`;
+    }
+    showToast(successCount ? `已上传 ${successCount} 张图片` : "上传失败", successCount ? "" : "error");
 
     if (successCount > 0) {
         clearGalleryCache();
-        await loadGallery({ force: true });
+        await Promise.all([loadGallery({ force: true }), refreshTabCounts()]);
     }
 }
-
-/* ===== 批量删除 ===== */
 
 async function batchDelete() {
     const ids = Array.from(state.selected);
     if (!ids.length) return;
 
     if (currentRole !== "admin") {
-        alert("访客没有删除权限。");
+        showToast("访客没有删除权限", "error");
         return;
     }
 
     const token = apiToken();
-    if (!token) { alert("请输入密钥。"); return; }
+    if (!token) {
+        showToast("请先设置密钥", "error");
+        return;
+    }
 
-    if (!confirm(`确定删除选中的 ${ids.length} 张图片吗？`)) return;
+    const confirmed = await askConfirm({
+        title: "删除图片",
+        message: `确定删除选中的 ${ids.length} 张图片吗？此操作不可撤销。`,
+        okText: "删除",
+        danger: true,
+    });
+    if (!confirmed) return;
 
     saveToken();
 
@@ -805,10 +927,10 @@ async function batchDelete() {
 
         const result = await response.json().catch(() => ({}));
 
-        if (response.status === 401) { alert("密钥错误。"); return; }
-        if (response.status === 403) { alert("无权限。"); return; }
+        if (response.status === 401) { showToast("密钥错误", "error"); return; }
+        if (response.status === 403) { showToast("无权限", "error"); return; }
         if (!response.ok && response.status !== 207) {
-            alert(result.message || "批量删除失败");
+            showToast(result.message || "批量删除失败", "error");
             return;
         }
 
@@ -816,25 +938,33 @@ async function batchDelete() {
         const failed = result.data?.failed ?? [];
         state.selected.clear();
 
-        let message = `已删除 ${deleted} 张图片。`;
-        if (failed.length) message += `\n失败：\n${failed.join("\n")}`;
-        alert(message);
-
         clearGalleryCache();
-        await loadGallery({ force: true });
+        await Promise.all([loadGallery({ force: true }), refreshTabCounts()]);
+
+        if (failed.length) {
+            await askConfirm({
+                title: `已删除 ${deleted} 张`,
+                message: `以下图片删除失败：\n${failed.join("\n")}`,
+                okText: "知道了",
+                cancel: false,
+            });
+        } else {
+            showToast(`已删除 ${deleted} 张图片`);
+        }
     } catch (error) {
-        alert(`删除失败：${error.message}`);
+        showToast(`删除失败：${error.message}`, "error");
     }
 }
-
-/* ===== 批量下载 ===== */
 
 async function batchDownload() {
     const ids = Array.from(state.selected);
     if (!ids.length) return;
 
     const token = apiToken();
-    if (!token) { alert("请先设置密钥。"); return; }
+    if (!token) {
+        showToast("请先设置密钥", "error");
+        return;
+    }
 
     saveToken();
 
@@ -847,15 +977,10 @@ async function batchDownload() {
             body: JSON.stringify(body),
         });
 
-        if (response.status === 401) { alert("密钥错误。"); return; }
-        if (response.status === 429) {
-            const result = await response.json().catch(() => ({}));
-            alert(result.message || "今日配额已用完。");
-            return;
-        }
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
-            alert(result.message || "批量下载失败");
+            const fallback = response.status === 401 ? "密钥错误" : "批量下载失败";
+            showToast(result.message || fallback, "error");
             return;
         }
 
@@ -868,70 +993,47 @@ async function batchDownload() {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(`正在下载 ${ids.length} 张图片`);
     } catch (error) {
-        alert(`下载失败：${error.message}`);
+        showToast(`下载失败：${error.message}`, "error");
     }
 }
 
-/* ===== 单张下载 ===== */
-
-/*
- * 单张下载走 fetch + Blob。
- *
- * 文件名直接用前端已有的 original_name（含中文），
- * 不去解析后端的 Content-Disposition。
- *
- * 缩略图模式下，文件内容是 JPEG 编码，把后缀换成 .jpg 更准确。
- */
 async function downloadSingle(item) {
     if (!item) return;
 
     const token = apiToken();
     if (!token) {
-        alert("请先设置密钥。");
+        showToast("请先设置密钥", "error");
         return;
     }
 
     const qs = state.downloadOriginal ? "?mode=original" : "";
-    const url = item.download_url + qs;
 
     let response;
     try {
-        response = await fetch(url, {
+        response = await fetch(item.download_url + qs, {
             headers: { Authorization: `Bearer ${token}` },
         });
     } catch (err) {
-        alert(`下载失败：${err.message}`);
+        showToast(`下载失败：${err.message}`, "error");
         return;
     }
 
-    if (response.status === 401) { alert("密钥错误。"); return; }
-    if (response.status === 403) { alert("无权限。"); return; }
-    if (response.status === 429) {
-        const data = await response.json().catch(() => ({}));
-        alert(data.message || "今日配额已用完。");
-        return;
-    }
     if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        alert(data.message || `下载失败（HTTP ${response.status}）`);
+        const fallback = response.status === 401 ? "密钥错误" : `下载失败（HTTP ${response.status}）`;
+        showToast(data.message || fallback, "error");
         return;
     }
 
-    /*
-     * 用 original_name 作为文件名。
-     *
-     * 下载原图   → 保留原文件名和后缀
-     * 下载缩略图 → 内容是 JPEG，把后缀换成 .jpg
-     */
     let filename = item.original_name || item.filename || "image";
     if (!state.downloadOriginal) {
         const base = filename.replace(/\.[^.]+$/, "");
         filename = (base || "image") + ".jpg";
     }
 
-    const blob = await response.blob();
-    const blobURL = URL.createObjectURL(blob);
+    const blobURL = URL.createObjectURL(await response.blob());
     const a = document.createElement("a");
     a.href = blobURL;
     a.download = filename;
@@ -941,7 +1043,7 @@ async function downloadSingle(item) {
     setTimeout(() => URL.revokeObjectURL(blobURL), 1000);
 }
 
-/* ===== 图片预览 ===== */
+/* ===== 预览 ===== */
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 const previewState = { items: [], index: 0, zoom: 1, origin: "50% 50%", token: 0 };
@@ -971,14 +1073,15 @@ function resetPreviewZoom() {
 function setPreviewZoom(zoom, cx, cy) {
     const img = $("previewImg");
     if (!img) return;
+
     const next = clamp(zoom, 1, 4);
 
     if (next > 1 && cx != null && cy != null) {
         const rect = img.getBoundingClientRect();
         if (rect.width && rect.height) {
-            const x = ((cx - rect.left) / rect.width) * 100;
-            const y = ((cy - rect.top) / rect.height) * 100;
-            previewState.origin = `${clamp(x, 0, 100)}% ${clamp(y, 0, 100)}%`;
+            const x = clamp(((cx - rect.left) / rect.width) * 100, 0, 100);
+            const y = clamp(((cy - rect.top) / rect.height) * 100, 0, 100);
+            previewState.origin = `${x}% ${y}%`;
         }
     } else if (next === 1) {
         previewState.origin = "50% 50%";
@@ -999,6 +1102,7 @@ function preloadPreviewImage(index) {
 function showPreviewAt(index) {
     const total = previewState.items.length;
     if (!total) return;
+
     const next = clamp(index, 0, total - 1);
     const item = previewState.items[next];
 
@@ -1026,11 +1130,8 @@ function showPreviewAt(index) {
 
     if (img.complete && img.naturalWidth > 0) stage.classList.remove("loading");
 
-    const caption = $("previewCaption");
-    if (caption) caption.textContent = item.caption;
-
-    const counter = $("previewCounter");
-    if (counter) counter.textContent = total > 1 ? `${next + 1} / ${total}` : "";
+    setText("previewCaption", item.caption);
+    setText("previewCounter", total > 1 ? `${next + 1} / ${total}` : "");
 
     const prev = $("previewPrev");
     if (prev) prev.disabled = next <= 0;
@@ -1042,20 +1143,21 @@ function showPreviewAt(index) {
 }
 
 function previewStep(delta) {
-    const total = previewState.items.length;
-    if (total <= 1) return;
+    if (previewState.items.length <= 1) return;
     const next = previewState.index + delta;
-    if (next < 0 || next >= total) return;
+    if (next < 0 || next >= previewState.items.length) return;
     showPreviewAt(next);
 }
 
 function openPreview(url, caption) {
     const items = collectPreviewItems();
     let index = items.findIndex((item) => item.url === url);
+
     if (index === -1) {
         items.push({ url, caption, alt: caption || "图片预览" });
         index = items.length - 1;
     }
+
     previewState.items = items;
     showPreviewAt(index);
     showModal($("previewModal"), true);
@@ -1063,6 +1165,7 @@ function openPreview(url, caption) {
 
 function closePreview() {
     showModal($("previewModal"), false);
+
     previewState.items = [];
     previewState.index = 0;
     previewState.token += 1;
@@ -1076,8 +1179,8 @@ function closePreview() {
 
     $("previewStage")?.classList.remove("loading");
     $("previewError")?.classList.remove("show");
-    const c = $("previewCaption"); if (c) c.textContent = "";
-    const pc = $("previewCounter"); if (pc) pc.textContent = "";
+    setText("previewCaption", "");
+    setText("previewCounter", "");
     resetPreviewZoom();
 }
 
@@ -1100,8 +1203,9 @@ function clearSelection() {
 function clearFiles() {
     if (state.uploading) return;
     state.files = [];
-    const fi = $("fileInput"); if (fi) fi.value = "";
-    const r = $("uploadResult"); if (r) r.textContent = "";
+    const input = $("fileInput");
+    if (input) input.value = "";
+    setText("uploadResult", "");
     renderFileList();
 }
 
@@ -1109,7 +1213,7 @@ function clearFiles() {
 
 function openTokenModal() {
     showModal($("tokenModal"), true);
-    window.setTimeout(() => {
+    setTimeout(() => {
         const input = $("tokenInput");
         if (input) { input.focus(); input.select(); }
     }, 60);
@@ -1117,56 +1221,45 @@ function openTokenModal() {
 
 function closeTokenModal() {
     showModal($("tokenModal"), false);
-    const r = $("tokenResult");
-    if (r) { r.textContent = ""; r.classList.remove("is-error", "is-success"); }
+    const result = $("tokenResult");
+    if (result) {
+        result.textContent = "";
+        result.classList.remove("is-error", "is-success");
+    }
 }
 
 function setTokenResult(message, type = "") {
-    const r = $("tokenResult");
-    if (!r) return;
-    r.textContent = message;
-    r.classList.remove("is-error", "is-success");
-    if (type === "error") r.classList.add("is-error");
-    if (type === "success") r.classList.add("is-success");
+    const result = $("tokenResult");
+    if (!result) return;
+    result.textContent = message;
+    result.classList.remove("is-error", "is-success");
+    if (type) result.classList.add(`is-${type}`);
 }
 
 async function handleSaveToken() {
-    const input = $("tokenInput");
-    const token = input ? input.value.trim() : "";
+    const token = apiToken();
 
     if (!token) {
         saveToken();
         await detectRole();
         setTokenResult("已切换为访客身份", "success");
-        window.setTimeout(() => closeTokenModal(), 600);
+        setTimeout(closeTokenModal, 600);
         return;
     }
 
     const res = await probeRole(token);
 
-    if (res.role === "admin") {
+    if (res.role === "admin" || res.role === "guest") {
         saveToken();
-        currentRole = "admin";
+        currentRole = res.role;
         applyRoleUI();
-        setTokenResult("✓ 管理员密钥已保存", "success");
-        window.setTimeout(() => closeTokenModal(), 600);
-        return;
-    }
-
-    if (res.role === "guest") {
-        saveToken();
-        currentRole = "guest";
-        applyRoleUI();
-        setTokenResult("✓ 访客密钥已保存", "success");
-        window.setTimeout(() => closeTokenModal(), 600);
+        setTokenResult(res.role === "admin" ? "✓ 管理员密钥已保存" : "✓ 访客密钥已保存", "success");
+        setTimeout(closeTokenModal, 600);
         return;
     }
 
     if (res.role === "blocked") {
-        setTokenResult(
-            "密钥正确，但当前 IP / 来源不在白名单。请从白名单访问，或点击生成临时密钥。",
-            "error",
-        );
+        setTokenResult("密钥正确，但当前 IP / 来源不在白名单。请在白名单内访问，或生成临时密钥。", "error");
         return;
     }
 
@@ -1181,66 +1274,39 @@ async function handleClearToken() {
     setTokenResult("已切换为访客身份", "success");
 }
 
-/* ===== 临时密钥生成 ===== */
-
 async function handleGenerateTempToken() {
     const btn = $("generateTempToken");
     if (!btn) return;
 
-    const originalText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = "生成中...";
-
     try {
         const resp = await fetch("/api/temp-token", { method: "POST" });
         const data = await resp.json().catch(() => ({}));
-
-        if (!resp.ok) {
-            showToast(data.message || "生成失败");
-            return;
-        }
-
-        showToast("临时密钥已生成，请查看服务器日志");
+        showToast(resp.ok ? "临时密钥已生成，请查看服务器日志" : data.message || "生成失败", resp.ok ? "" : "error");
     } catch (err) {
-        showToast("生成失败：" + err.message);
+        showToast("生成失败：" + err.message, "error");
     } finally {
         btn.disabled = false;
-        btn.textContent = originalText;
     }
 }
 
-/* ===== 事件绑定 ===== */
+/* ===== 事件 ===== */
 
 document.addEventListener("click", async (event) => {
     const modeBtn = event.target.closest(".mode-btn");
     if (modeBtn) { setMode(modeBtn.dataset.mode); return; }
 
-    const preview = event.target.closest("[data-preview]");
-    if (preview && !event.target.closest("input")) {
-        openPreview(preview.dataset.preview, preview.dataset.caption || "");
+    const previewTarget = event.target.closest("[data-preview]");
+    if (previewTarget) {
+        openPreview(previewTarget.dataset.preview, previewTarget.dataset.caption || "");
         return;
     }
 
     const downloadBtn = event.target.closest("[data-download-id]");
     if (downloadBtn) {
-        const id = Number(downloadBtn.dataset.downloadId);
-        const key = galleryCacheKey(state.type, state.page, state.size);
-        const cached = galleryCache.get(key);
-        const item = cached?.data?.items?.find((x) => x.id === id);
-        if (!item) {
-            alert("找不到图片，请刷新列表。");
-            return;
-        }
-        await downloadSingle(item);
-        return;
-    }
-
-    const checkbox = event.target.closest("[data-select-id]");
-    if (checkbox) {
-        const id = Number(checkbox.dataset.selectId);
-        if (checkbox.checked) state.selected.add(id);
-        else state.selected.delete(id);
-        updateSelectionUI();
+        const item = itemById.get(Number(downloadBtn.dataset.downloadId));
+        if (item) await downloadSingle(item);
+        else showToast("找不到图片，请刷新列表", "error");
         return;
     }
 
@@ -1249,8 +1315,7 @@ document.addEventListener("click", async (event) => {
 
     const cancelFile = event.target.closest("[data-cancel-file]");
     if (cancelFile) {
-        const item = state.files.find((entry) => entry.key === cancelFile.dataset.cancelFile);
-        item?.xhr?.abort();
+        state.files.find((entry) => entry.key === cancelFile.dataset.cancelFile)?.xhr?.abort();
         return;
     }
 
@@ -1267,31 +1332,38 @@ document.addEventListener("click", async (event) => {
         return;
     }
 
+    const checkbox = event.target.closest("[data-select-id]");
+    if (checkbox) {
+        const id = Number(checkbox.dataset.selectId);
+        if (checkbox.checked) state.selected.add(id);
+        else state.selected.delete(id);
+        updateSelectionUI();
+        return;
+    }
+
     const tab = event.target.closest(".tab");
-    if (tab) {
+    if (tab && !tab.classList.contains("active")) {
         tabPages[state.type] = state.page;
-        document.querySelectorAll(".tab").forEach((i) => i.classList.remove("active"));
-        tab.classList.add("active");
+
+        document.querySelectorAll(".tab").forEach((el) => el.classList.toggle("active", el === tab));
+
         state.type = tab.dataset.type;
         state.page = tabPages[state.type] || 1;
         state.total = 0;
+        state.items = [];
         state.selected.clear();
+        updateSelectionUI();
 
-        const badge = $("currentTypeBadge");
-        if (badge) {
-            badge.textContent = state.type === "mobile" ? "Mobile" : "Desktop";
-            badge.classList.remove("desktop", "mobile");
-            badge.classList.add(state.type);
-        }
         await loadGallery();
     }
 });
 
+on("themeToggle", "click", toggleTheme);
 on("openToken", "click", openTokenModal);
 
 on("openUpload", "click", () => {
     if (currentRole !== "admin") {
-        showToast("请先设置管理员密钥");
+        showToast("请先设置管理员密钥", "error");
         openTokenModal();
         return;
     }
@@ -1318,42 +1390,31 @@ on("tokenInput", "keydown", (event) => {
 });
 
 on("copyGuestToken", "click", async (event) => {
-    const btn = event.currentTarget;
     const token = await ensureGuestTokenLoaded();
-    if (!token) { showToast("访客密钥加载失败"); return; }
-    await copyText(token, btn);
+    if (!token) { showToast("访客密钥加载失败", "error"); return; }
+    await copyText(token, event.currentTarget);
 });
 
 on("generateTempToken", "click", handleGenerateTempToken);
-
-on("closeUpload", "click", () => {
-    if (!state.uploading) showModal($("uploadModal"), false);
-});
-
+on("closeUpload", "click", () => { if (!state.uploading) showModal($("uploadModal"), false); });
 on("startUpload", "click", startUpload);
 on("selectAll", "click", selectAllVisible);
 on("clearSelection", "click", clearSelection);
 on("clearFiles", "click", clearFiles);
 
-on("fileInput", "change", () => {
-    const input = $("fileInput");
-    if (!input) return;
-    addFiles(input.files);
-    input.value = "";
+on("fileInput", "change", (event) => {
+    addFiles(event.target.files);
+    event.target.value = "";
 });
 
-on("dropZone", "click", () => {
-    if (!state.uploading) $("fileInput")?.click();
-});
+on("dropZone", "click", () => { if (!state.uploading) $("fileInput")?.click(); });
 
 on("dropZone", "dragover", (event) => {
     event.preventDefault();
     $("dropZone")?.classList.add("dragging");
 });
 
-on("dropZone", "dragleave", () => {
-    $("dropZone")?.classList.remove("dragging");
-});
+on("dropZone", "dragleave", () => $("dropZone")?.classList.remove("dragging"));
 
 on("dropZone", "drop", (event) => {
     event.preventDefault();
@@ -1364,9 +1425,10 @@ on("dropZone", "drop", (event) => {
 on("batchDelete", "click", batchDelete);
 on("batchDownload", "click", batchDownload);
 
-on("refreshBtn", "click", () => {
+on("refreshBtn", "click", async () => {
     clearGalleryCache();
-    loadGallery({ force: true });
+    await Promise.all([loadGallery({ force: true }), refreshTabCounts()]);
+    showToast("已刷新");
 });
 
 on("copyApi", "click", async (event) => {
@@ -1376,13 +1438,22 @@ on("copyApi", "click", async (event) => {
 on("downloadOriginal", "change", (event) => {
     state.downloadOriginal = event.target.checked;
     saveDownloadOriginal();
-    const key = galleryCacheKey(state.type, state.page, state.size);
-    const cached = galleryCache.get(key);
-    if (cached) applyGalleryResult(cached);
+});
+
+on("searchInput", "input", debounce((event) => {
+    state.query = event.target.value.trim();
+    renderGallery();
+}, 140));
+
+on("pageSize", "change", async (event) => {
+    const size = Number(event.target.value) || 24;
+    state.size = size;
+    state.page = 1;
+    localStorage.setItem(PAGE_SIZE_KEY, String(size));
+    await loadGallery();
 });
 
 on("closePreview", "click", closePreview);
-
 on("previewPrev", "click", (event) => { event.stopPropagation(); previewStep(-1); });
 on("previewNext", "click", (event) => { event.stopPropagation(); previewStep(1); });
 
@@ -1400,12 +1471,14 @@ on("previewStage", "wheel", (event) => {
 let previewTouch = null;
 
 on("previewStage", "touchstart", (event) => {
-    if (event.touches.length !== 1) { previewTouch = null; return; }
-    previewTouch = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    previewTouch = event.touches.length === 1
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
+        : null;
 }, { passive: true });
 
 on("previewStage", "touchend", (event) => {
     if (!previewTouch) return;
+
     const touch = event.changedTouches[0];
     const start = previewTouch;
     previewTouch = null;
@@ -1415,6 +1488,7 @@ on("previewStage", "touchend", (event) => {
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+
     previewStep(dx < 0 ? 1 : -1);
 }, { passive: true });
 
@@ -1439,32 +1513,52 @@ $("uploadModal")?.querySelector(".modal-backdrop")?.addEventListener("click", ()
 });
 $("previewModal")?.querySelector(".modal-backdrop")?.addEventListener("click", closePreview);
 
-window.addEventListener("resize", updateAPIBox);
+window.addEventListener("resize", debounce(updateAPIBox, 150));
+
+const updateScrollState = () => document.body.classList.toggle("is-scrolled", window.scrollY > 8);
+window.addEventListener("scroll", updateScrollState, { passive: true });
 
 window.addEventListener("keydown", (event) => {
-    const previewOpen = !$("previewModal")?.classList.contains("hidden");
-    if (previewOpen) {
+    if (isModalOpen("previewModal")) {
         if (event.key === "Escape") closePreview();
         else if (event.key === "ArrowLeft") { event.preventDefault(); previewStep(-1); }
         else if (event.key === "ArrowRight") { event.preventDefault(); previewStep(1); }
         return;
     }
 
-    const tokenOpen = !$("tokenModal")?.classList.contains("hidden");
-    if (event.key === "Escape" && tokenOpen) { closeTokenModal(); return; }
+    if (event.key === "Escape") {
+        if (isModalOpen("tokenModal")) closeTokenModal();
+        else if (isModalOpen("uploadModal") && !state.uploading) showModal($("uploadModal"), false);
+        return;
+    }
 
-    const uploadOpen = !$("uploadModal")?.classList.contains("hidden");
-    if (event.key === "Escape" && uploadOpen && !state.uploading) {
-        showModal($("uploadModal"), false);
+    const tag = event.target?.tagName;
+    if (event.key === "/" && tag !== "INPUT" && tag !== "SELECT" && tag !== "TEXTAREA") {
+        event.preventDefault();
+        $("searchInput")?.focus();
     }
 });
 
-/* 启动 */
+/* ===== 启动 ===== */
+
+applyTheme();
 updateAPIBox();
 restoreToken();
 restoreMode();
 restoreDownloadOriginal();
+
+const savedSize = Number(localStorage.getItem(PAGE_SIZE_KEY));
+if (savedSize && $("pageSize")?.querySelector(`option[value="${savedSize}"]`)) {
+    state.size = savedSize;
+    $("pageSize").value = String(savedSize);
+}
+
 renderFileList();
+renderSkeletons(8);
+updateSelectionUI();
+updateScrollState();
+
 loadGallery();
+refreshTabCounts();
 void detectRole();
 void loadPublicConfig();
